@@ -1,7 +1,7 @@
-<tr><td><span style="font-size:128">&#191;</span></td><td style="vertical-align: bottom">wild-pare</td></tr>
-----------------------------
+<span style="font-size:128">&#191;</span> wild-pare
+----------------
 
-####*Subscription based in-memry key/value store, optimised for wildcard searches*
+#### *Subscription based in-memry key/value store, optimised for wildcard searches*
 
 
 Arbitrary wildcard searches in key/value stores are computationally intensive because of the amount of possible permutations for the wildcard, ie: searching for "/the/*" could return "/the/quick/red/fox" or "/the/slow/brown/cow" or "/the/other" etc. etc.. This issue is compounded when a subscription model is introduced, where the subscriptions are stored wildcard keys. A tree-like structure is essential if we want to avoid full list scans.
@@ -12,7 +12,7 @@ wild-pare is in-memory subscription store that does arbitrary wildcard searches 
 
 ### NB NB - still in development, unsubscribe not tested yet
 
-####abstract tree structure:
+#### abstract tree structure:
 
 ```
 [root(bst*)]
@@ -24,7 +24,7 @@ wild-pare is in-memory subscription store that does arbitrary wildcard searches 
 - *bst = binary search tree
 - *segment_length, the length of the actual key/wildcard part
 
-####example data structure:
+#### example data structure:
 
 ```javascript
 var pare_tree_structure = {
@@ -94,7 +94,7 @@ mocha test/perf
 
 ```
 
-####performance:
+#### performance:
 
 Between 35000 and 40000 wildcard searches in a tree with 300000 subscription nodes in one second. On an i7 macbook pro, with 8GB memory:
 

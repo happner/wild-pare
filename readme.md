@@ -1,6 +1,9 @@
 <tr><td><span style="font-size:128">&#191;</span></td><td style="vertical-align: bottom">wild-pare</td></tr>
 ----------------------------
 
+####*Subscription based in-memry key/value store, optimised for wildcard searches*
+
+
 Arbitrary wildcard searches in key/value stores are computationally intensive because of the amount of possible permutations for the wildcard, ie: searching for "/the/*" could return "/the/quick/red/fox" or "/the/slow/brown/cow" or "/the/other" etc. etc.. This issue is compounded when a subscription model is introduced, where the subscriptions are stored wildcard keys. A tree-like structure is essential if we want to avoid full list scans.
 
 wild-pare is in-memory subscription store that does arbitrary wildcard searches quickly, by implementing [louis's binary search tree](https://github.com/louischatriot/node-binary-search-tree) and branching the data by the key length, branches that are based on key lengths greater than the query segment (be it wildcard or precise), are pared away from the search.

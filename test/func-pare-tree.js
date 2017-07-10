@@ -129,7 +129,7 @@ describe('func-wild-tree', function () {
     return done();
   });
 
-  it.only('sense checks subscriptions and their attendant queries, doing removes', function (done) {
+  it('sense checks subscriptions and their attendant queries, doing removes', function (done) {
 
     this.timeout(300000);
 
@@ -159,7 +159,9 @@ describe('func-wild-tree', function () {
 
     var doubleSubscribeLeftKey = shortid.generate();
 
-    var searchResults = [];
+    var searchResultsBefore = [];
+
+    var searchResultsAfter = [];
 
     var allSubscription = subscriptionTree.add('***', {key:allKey, data:{test:1}});
 
@@ -191,40 +193,105 @@ describe('func-wild-tree', function () {
 
     var tripleAllSubscription3 = subscriptionTree.add('**', {key:allTripleKey, data:{test:18}});
 
+    //console.log('allSubscription:::', allSubscription);
+
+    searchResultsBefore.push({path:'a/test/left',results:subscriptionTree.search('a/test/left')});
+
+    expect(searchResultsBefore[searchResultsBefore.length - 1].results.length).to.be(3);
+    //
+    searchResultsBefore.push({path:'test/right/a',results:subscriptionTree.search('test/right/a')});
+    //
+    searchResultsBefore.push({path:'short/and/test/complex',results:subscriptionTree.search('short/and/test/complex')});
+    //
+    searchResultsBefore.push({path:'/test/complex/and/short',results:subscriptionTree.search('/test/complex/and/short')});
+    //
+    searchResultsBefore.push({path:'test/right/and/short/and/short',results:subscriptionTree.search('test/right/and/short/and/short')});
+
+    searchResultsBefore.push({path:'short/andtest/right/and/short',results:subscriptionTree.search('short/andtest/right/and/short')});
+    //
+    searchResultsBefore.push({path:'/precise/test',results:subscriptionTree.search('/precise/test')});
+    // //
+    searchResultsBefore.push({path:'/precise/double',results:subscriptionTree.search('/precise/double')});
+    // //
+    searchResultsBefore.push({path:'double/right/and',results:subscriptionTree.search('double/right/and')});
+    // //
+    searchResultsBefore.push({path:'/precise/double',results:subscriptionTree.search('/precise/double')});
+    // //
+    searchResultsBefore.push({path:'and/double/left', results:subscriptionTree.search('and/double/left')});
+
+    console.log('------BEFORE-----');
+
+    searchResultsBefore.forEach(function(searchResult){
+      searchResult.results.forEach(function(recipient){
+        delete recipient.key;
+      });
+    });
+
+    console.log(JSON.stringify(searchResultsBefore, null, 2));
+
+    expect(subscriptionTree.search('*').length).to.be(2);
+
     subscriptionTree.remove(allSubscription);
+
+    expect(subscriptionTree.search('*').length).to.be(1);
 
     subscriptionTree.remove({id:leftSubscription.id});
 
     subscriptionTree.remove('double/right/*');
 
-    subscriptionTree.remove({path:tripleAllSubscription2.path, refCount:2});
+    expect(subscriptionTree.search('*').length).to.be(1);
+
+    var allResults = subscriptionTree.search('*');
+
+    expect(Object.keys(allResults[0].data).length).to.be(3);
+
+    subscriptionTree.remove(tripleAllSubscription2);
+
+    allResults = subscriptionTree.search('*');
+
+    expect(Object.keys(allResults[0].data).length).to.be(2);
 
     subscriptionTree.remove('*/test/left');
 
     subscriptionTree.remove(preciseDoubleSubscription1);
 
+    searchResultsAfter.push({path:'a/test/left', results:subscriptionTree.search('a/test/left')});
 
-    searchResults.push({path:'a/test/left',results:subscriptionTree.search('a/test/left')});
-    //
-    searchResults.push({path:'test/right/a',results:subscriptionTree.search('test/right/a')});
-    //
-    searchResults.push({path:'short/and/test/complex',results:subscriptionTree.search('short/and/test/complex')});
-    //
-    searchResults.push({path:'/test/complex/and/short',results:subscriptionTree.search('/test/complex/and/short')});
-    //
-    searchResults.push({path:'test/right/and/short/and/short',results:subscriptionTree.search('test/right/and/short/and/short')});
+    expect(searchResultsAfter[searchResultsAfter.length - 1].results.length).to.be(1);
 
-    searchResults.push({path:'short/andtest/right/and/short',results:subscriptionTree.search('short/andtest/right/and/short')});
+    searchResultsAfter.push({path:'test/right/a',results:subscriptionTree.search('test/right/a')});
+
+    expect(searchResultsAfter[searchResultsAfter.length - 1].results.length).to.be(2);
+
+    searchResultsAfter.push({path:'short/and/test/complex',results:subscriptionTree.search('short/and/test/complex')});
     //
-    searchResults.push({path:'/precise/test',results:subscriptionTree.search('/precise/test')});
+    searchResultsAfter.push({path:'/test/complex/and/short',results:subscriptionTree.search('/test/complex/and/short')});
+    //
+    searchResultsAfter.push({path:'test/right/and/short/and/short',results:subscriptionTree.search('test/right/and/short/and/short')});
+
+    searchResultsAfter.push({path:'short/andtest/right/and/short',results:subscriptionTree.search('short/andtest/right/and/short')});
+    //
+    searchResultsAfter.push({path:'/precise/test',results:subscriptionTree.search('/precise/test')});
     // //
-    searchResults.push({path:'/precise/double',results:subscriptionTree.search('/precise/double')});
+    searchResultsAfter.push({path:'/precise/double',results:subscriptionTree.search('/precise/double')});
     // //
-    searchResults.push({path:'double/right/and',results:subscriptionTree.search('double/right/and')});
+    searchResultsAfter.push({path:'double/right/and',results:subscriptionTree.search('double/right/and')});
+
+    expect(searchResultsAfter[searchResultsAfter.length - 1].results.length).to.be(1);
     // //
-    searchResults.push({path:'/precise/double',results:subscriptionTree.search('/precise/double')});
+    searchResultsAfter.push({path:'/precise/double',results:subscriptionTree.search('/precise/double')});
     // //
-    searchResults.push({path:'and/double/left', results:subscriptionTree.search('and/double/left')});
+    searchResultsAfter.push({path:'and/double/left', results:subscriptionTree.search('and/double/left')});
+
+    console.log('------AFTER-----');
+
+    searchResultsAfter.forEach(function(searchResult){
+      searchResult.results.forEach(function(recipient){
+        delete recipient.key;
+      });
+    });
+
+    console.log(JSON.stringify(searchResultsAfter, null, 2));
 
     expect(subscriptionTree.__wildcardRightSegments.data.length > 0).to.be(true);
 
@@ -243,16 +310,9 @@ describe('func-wild-tree', function () {
     expect(subscriptionTree.__preciseSegments.data.length).to.be(0);
 
     expect(Object.keys(subscriptionTree.__allRecipients).length).to.be(0);
-    
-    searchResults.forEach(function(searchResult){
-      searchResult.results.forEach(function(recipient){
-        delete recipient.key;
-      });
-    });
 
-    console.log(JSON.stringify(searchResults, null, 2));
-
-    //expect(searchResults).to.eql(require('./fixtures/expected-remove-results'));
+    //expect(searchResultsBefore).to.eql(require('./fixtures/expected-remove-results-before'));
+    //expect(searchResultsAfter).to.eql(require('./fixtures/expected-remove-results-after'));
 
     return done();
   });
@@ -342,7 +402,6 @@ describe('func-wild-tree', function () {
 
     var subscriptionResults = {};
 
-
     var inserts = 0;
 
     var searched = 0;
@@ -369,6 +428,7 @@ describe('func-wild-tree', function () {
 
       searched++;
     });
+
     // testLog('subscriptionResults:::', subscriptionResults);
     //
     // testLog('subscriptions:::', subscriptions);

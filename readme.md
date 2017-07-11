@@ -4,13 +4,13 @@
 #### *Subscription based in-memory key/value store, optimised for wildcard searches*
 
 
-Arbitrary wildcard searches in key/value stores are computationally intensive because of the amount of possible permutations for the wildcard, ie: searching for "/the/*" could return "/the/quick/red/fox" or "/the/slow/brown/cow" or "/the/other" etc. etc.. This issue is compounded when a subscription model is introduced, where the subscriptions are stored wildcard keys. A tree-like structure is essential if we want to avoid full list scans.
+Arbitrary wildcard searches in key/value stores are computationally expensive because of the amount of possible permutations for the wildcard, ie: searching for "/the/*" could return "/the/quick/red/fox" or "/the/slow/brown/cow" or "/the/other" etc. etc.. This issue is compounded when a subscription model is introduced, where the subscriptions are stored wildcard keys. A tree-like structure is essential if we want to avoid full list scans.
 
 wild-pare is in-memory subscription store that does arbitrary wildcard searches quickly, by implementing [louis's binary search tree](https://github.com/louischatriot/node-binary-search-tree) and branching the data by the key length, branches that are based on key lengths greater than the query segment (be it wildcard or precise), are pared away from the search.
 
 [Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key.
 
-### NB NB - still in development, unsubscribe not tested yet
+#### still in development, so there be dragons...
 
 #### abstract tree structure:
 
@@ -27,7 +27,7 @@ wild-pare is in-memory subscription store that does arbitrary wildcard searches 
 #### example data structure:
 
 ```javascript
-var pare_tree_structure = {
+var pare_tree_pseudo_structure = {
      15:{                  //this key is skipped because it is longer than the 8 characters of the search
        "15_characters!!":[
         {key:"subscriber1", data:{test:"data0"}}
@@ -35,11 +35,11 @@ var pare_tree_structure = {
     },
     10:{
        "ten_chars*":[
-        {key:"subscriber1", data:{test:"data1"}},
+        {key:"subscriber1", data:{
+          "subscriptionId_01":{test:"data1"},
+          "subscriptionId_02":{test:"data2"}
+        }},
         {key:"subscriber2", data:{test:"data2"}}
-       ],
-       "*en_chars*":[
-        {key:"subscriber1", data:{test:"data3"}}
        ]
     },
     6:{
@@ -52,7 +52,7 @@ var pare_tree_structure = {
     }
 }
 ```
-- based on the above structure, 4 subscriptions have happened:
+- based on the above structure, 6 subscriptions would have have happened, 3 for the path "ten_chars*", 2 for the same recipient ("subscriber1") but with different data, and 1 for a different recipient ("subscriber2")
 
 ```javascript
 
@@ -345,10 +345,18 @@ mocha test/perf
 
 #### performance:
 
-Between 25000 and 30000 wildcard searches in a tree with 300000 subscription nodes in one second. On an i7 macbook pro, with 8GB memory:
+Between 25000 and 40000 wildcard searches in a tree with 300000 subscription nodes in one second. On an i7 macbook pro, with 8GB memory:
 
 ```bash
 //when running mocha test/perf, output
 
-did 300000 wildcard inserts in 3125 milliseconds
-did 30000 wildcard searches in 1283 milliseconds, in a tree with += 300000 nodes.
+did 300000 wildcard inserts in 2744 milliseconds
+did 30000 wildcard searches in 872 milliseconds, in a tree with += 300000 nodes.
+
+did 300000 precise inserts in 2562 milliseconds
+did 30000 precise searches in 138 milliseconds, in a tree with += 300000 nodes.
+```
+
+#### caveats
+
+- subscriptions that enclose the path with wildcards, ie */a/test/subscription/* will possibly perform slower, because they are stored and searched through in a different manner.

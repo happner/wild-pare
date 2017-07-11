@@ -358,33 +358,6 @@ PareTree.prototype.__segmentPath = function(path){
   return segment;
 };
 
-// PareTree.prototype.__addWildcard = function (pathInfo, recipient) {
-//
-//   this.__wildcardCount++;
-//
-//   //path lile /test/*/blah, or /*/blah/*longer/side
-//   if (pathSegments.length > 2 || wildcardIndex > 0 && wildcardIndex < pathLength) {
-//
-//     if (path.substring(0,1) != '*' && path.substring(path.length - 2, path.length - 1) != '*'){
-//
-//     }
-//
-//     if (path.substring(0,1) == '*' && path.substring(path.length - 2, path.length - 1) == '*') return this.__addWildcardComplex(path, pathSegments, recipient, true);
-//     //path like */test/left/*/complex
-//     if (path.substring(0,1) == '*') return this.__addWildcardLeft(path, pathSegments, recipient, true);
-//     //path like test*/right/complex/*
-//     if (path.substring(path.length - 2, path.length - 1) == '*') return this.__addWildcardRight(path, pathSegments, recipient, true);
-//
-//     //path like /short/*/test/long or /short/*/*/test/long
-//     return this.__addWildcardLeft(path, pathSegments, recipient, true);
-//   }
-//
-//   //path lile */test
-//   if (wildcardIndex == 0) return this.__addWildcardLeft(path, pathSegments, recipient);
-//   //path lile /test/*
-//   return this.__addWildcardRight(path, pathSegments, recipient);
-// };
-
 PareTree.prototype.add = function (path, recipient) {
 
   var pathInfo = this.__segmentPath(path);
@@ -679,6 +652,8 @@ PareTree.prototype.__searchAndAppendWildcardComplex = function (path, recipients
   var _this = this;
 
   _this.__wildcardComplexSegments.forEach(function(complexSegment){
+
+    if (complexSegment.path.length > path) return; //complex segment is *my/test*/complex/segment* and path is my/test
 
     if (_this.__wildcardMatch(complexSegment.path, path)){
 

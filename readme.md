@@ -56,27 +56,276 @@ var pare_tree_structure = {
 
 ```javascript
 
-var PareTree = require('pare-tree');
+//as per test/func-pare-tree
 
-var pareTree = new PareTree();
+var subscriptionTree = new PareTree();
 
-pareTree.add('15_characters!!', {key:'subscriber1', data:{test:"data0"}});
-pareTree.add('ten_chars*', {key:'subscriber1', data:{test:"data1"}});
-pareTree.add('ten_chars*', {key:'subscriber2', data:{test:"data2"}});
-pareTree.add('*en_chars*', {key:'subscriber1', data:{test:"data3"}});
-pareTree.add('6_char', {key:'subscriber1', data:{test:"data4"}});
-pareTree.add('ten_c*', {key:'subscriber2', data:{test:"data"}});
+    //add a subscription:
 
-var subscriptions = pareTree.search('ten_chars/all');
+    var subscriptionReference = subscriptionTree.add('/a/precise/subscription', {key:'subscriber1', data:{some:{custom:"data"}}});
 
-//we should get 4 subscriptions back that match the path, based on their subscriptions
-expect(subscriptions).to.eql(
-  [ {key:'subscriber1', data:{test:"data1"}, path:'ten_chars*'},
-    {key:'subscriber1', data:{test:"data3"}, path:'*en_chars*'},
-    {key:'subscriber2', data:{test:"data2"}, path:'ten_chars*'},
-    {key:'subscriber2', data:{test:"data"}, path:'ten_c*'}
-  ]
-)
+    //console.log(subscriptionReference) looks like:
+
+    // {
+    //   "id": "subscriber1&0&1&e8vj4zk8tdu&/a/precise/subscription"
+    // }
+
+    //query the tree:
+
+    var queryResults = subscriptionTree.search('/a/precise/subscription');//or subscriptionTree.search({path:'/a/precise/subscription'})
+
+    expect(queryResults.length).to.be(1);
+
+    //console.log(queryResults) looks like:
+
+    // [
+    //   {
+    //     "refCount": 1,
+    //     "data": {
+    //       "subscriber1&0&1&e99j4zk9onq&/a/precise/subscription": {
+    //         "some": {
+    //           "custom": "data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 23,
+    //     "path": "/a/precise/subscription",
+    //     "key": "subscriber1"
+    //   }
+    // ]
+
+    //remove a subscription:
+
+    var removalResult = subscriptionTree.remove(subscriptionReference); // or subscriptionTree.remove({id:subscriptionReference.id}) or subscriptionTree.remove(subscriptionReference.recipient.path)
+
+    //console.log(removalResult) looks like:
+
+    // [
+    //   {
+    //     "id": "subscriber1&0&1&e9jj4zkaiew&/a/precise/subscription"
+    //   }
+    // ]
+
+    //add a wildcard subscription, wildcards are the * character - wildcards allow for any amount of text, so the following are valid wildcard paths:
+    // /a/wildcard/subscription/* or */wildcard/subscription* or */wildcard* or */wildcard*/subscription/*
+    // and would all return for a search that looks like this: /a/wildcard/subscription/test
+
+    //the following demonstrates adding these subscriptions, for 3 subscribers, 'subscriber2', 'subscriber3' and 'subscriber4'
+    //NB - notice we are adding a duplicate subscription for */wildcard/subscription* subscriber2, but with different data
+
+    //duplicateright wildcard
+    var wildcardSubscriptionReference1 = subscriptionTree.add('/a/wildcard/subscription/*', {key:'subscriber2', data:{some:{custom:"data"}}});
+    var wildcardSubscriptionReference1_same = subscriptionTree.add('/a/wildcard/subscription/*', {key:'subscriber2', data:{some:{custom:"other-data"}}});
+
+    //a left wildcard
+    var wildcardSubscriptionReference2 = subscriptionTree.add('*/wildcard/subscription/test', {key:'subscriber2', data:{some:{custom:"data"}}});
+
+    //added duplicate complex wildcards, just different data - anything that is enclosed with 2 * is slow and should be used with care
+    var wildcardSubscriptionReference3 = subscriptionTree.add('*/wildcard*', {key:'subscriber2', data:{some:{custom:"data"}}});
+    var wildcardSubscriptionReference4 = subscriptionTree.add('*/wildcard*', {key:'subscriber2', data:{some:{custom:"other-data"}}});
+
+    var wildcardSubscriptionReference5 = subscriptionTree.add('*/wildcard*', {key:'subscriber3', data:{some:{custom:"data"}}});
+
+    var wildcardSubscriptionReference6 = subscriptionTree.add('*/wildcard*/subscription/*', {key:'subscriber4', data:{some:{custom:"data"}}});
+
+    //we now search the tree
+    var wildcardSearchResult = subscriptionTree.search('/a/wildcard/subscription/test');
+
+    //we should get 5 results, one for each subscription path (we have 2 path/subscriber pairings on our inserts)
+
+    // our search results should look something like this:
+
+    // [
+    //   {
+    //     "refCount": 2,
+    //     "data": {
+    //       "subscriber2&2&1&e6pj4zju49o&/a/wildcard/subscription/*": {
+    //         "some": {
+    //           "custom": "data"
+    //         }
+    //       },
+    //       "subscriber2&2&1&e6pj4zju49p&/a/wildcard/subscription/*": {
+    //         "some": {
+    //           "custom": "other-data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 25,
+    //     "path": "/a/wildcard/subscription/*",
+    //     "complex": true,
+    //     "key": "subscriber2"
+    //   },
+    //   {
+    //     "refCount": 1,
+    //     "data": {
+    //       "subscriber2&1&1&e6pj4zju49q&*/wildcard/subscription/test": {
+    //         "some": {
+    //           "custom": "data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 27,
+    //     "path": "*/wildcard/subscription/test",
+    //     "complex": false,
+    //     "key": "subscriber2"
+    //   },
+    //   {
+    //     "refCount": 2,
+    //     "data": {
+    //       "subscriber2&3&1&e6pj4zju49r&*/wildcard*": {
+    //         "some": {
+    //           "custom": "data"
+    //         }
+    //       },
+    //       "subscriber2&3&1&e6pj4zju49s&*/wildcard*": {
+    //         "some": {
+    //           "custom": "other-data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 11,
+    //     "path": "*/wildcard*",
+    //     "complex": true,
+    //     "key": "subscriber2"
+    //   },
+    //   {
+    //     "refCount": 1,
+    //     "data": {
+    //       "subscriber3&3&1&e6pj4zju49t&*/wildcard*": {
+    //         "some": {
+    //           "custom": "data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 11,
+    //     "path": "*/wildcard*",
+    //     "complex": true,
+    //     "key": "subscriber3"
+    //   },
+    //   {
+    //     "refCount": 1,
+    //     "data": {
+    //       "subscriber4&3&1&e6pj4zju49u&*/wildcard*/subscription/*": {
+    //         "some": {
+    //           "custom": "data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 26,
+    //     "path": "*/wildcard*/subscription/*",
+    //     "complex": true,
+    //     "key": "subscriber4"
+    //   }
+    // ]
+
+    //some sense checking:
+
+    expect(wildcardSearchResult.length).to.be(5);
+
+    expect(wildcardSearchResult[0].refCount).to.be(2);
+
+    //demonstrates how custom data is managed and accessible in search results
+    expect(wildcardSearchResult[0].data[wildcardSubscriptionReference1_same.id].some.custom).to.be("other-data");
+    expect(wildcardSearchResult[0].data[wildcardSubscriptionReference1.id].some.custom).to.be("data");
+
+
+    //NB - notice the refCount for the */wildcard/subscription* path is 2,
+    // and the .data object has 2 properties, each matching the id of the consecutive almost identical subscriptions made
+    // , you can see that the data has been stored twice - both values ready
+
+    //Now lets remove the other subscriptions
+
+    var removalResult1 = subscriptionTree.remove(wildcardSubscriptionReference1);
+
+    var removalResult2 = subscriptionTree.remove(wildcardSubscriptionReference4);
+
+    var removalResult3 = subscriptionTree.remove(wildcardSubscriptionReference5);
+
+    //removalResults return with an array, containing an object/s that has only an id field
+    //we return an array because the removal may have been by path
+    expect(removalResult1[0].id).to.be(wildcardSubscriptionReference1.id);
+    expect(removalResult2[0].id).to.be(wildcardSubscriptionReference4.id);
+    expect(removalResult3[0].id).to.be(wildcardSubscriptionReference5.id);
+
+    //Our list is now pruned:
+
+    wildcardSearchResult = subscriptionTree.search('/a/wildcard/subscription/test');
+
+    //we expect our returned list to look something like this:
+
+    // NB notice how we still have a record for /a/wildcard/subscription/* - the refCount is now 1
+    // and the custom data has only one property matching the unique subscription id.
+
+    // [
+    //   {
+    //     "refCount": 1,
+    //     "data": {
+    //       "subscriber2&2&1&e82j4zk3q2x&/a/wildcard/subscription/*": {
+    //         "some": {
+    //           "custom": "other-data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 25,
+    //     "path": "/a/wildcard/subscription/*",
+    //     "complex": true,
+    //     "key": "subscriber2"
+    //   },
+    //   {
+    //     "refCount": 1,
+    //     "data": {
+    //       "subscriber2&1&1&e82j4zk3q2y&*/wildcard/subscription/test": {
+    //         "some": {
+    //           "custom": "data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 27,
+    //     "path": "*/wildcard/subscription/test",
+    //     "complex": false,
+    //     "key": "subscriber2"
+    //   },
+    //   {
+    //     "refCount": 1,
+    //     "data": {
+    //       "subscriber2&3&1&e82j4zk3q2z&*/wildcard*": {
+    //         "some": {
+    //           "custom": "data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 11,
+    //     "path": "*/wildcard*",
+    //     "complex": true,
+    //     "key": "subscriber2"
+    //   },
+    //   {
+    //     "refCount": 1,
+    //     "data": {
+    //       "subscriber4&3&1&e82j4zk3q32&*/wildcard*/subscription/*": {
+    //         "some": {
+    //           "custom": "data"
+    //         }
+    //       }
+    //     },
+    //     "segment": 26,
+    //     "path": "*/wildcard*/subscription/*",
+    //     "complex": true,
+    //     "key": "subscriber4"
+    //   }
+    // ]
+
+    //some more sense checking:
+
+    expect(wildcardSearchResult.length).to.be(4);
+
+    expect(wildcardSearchResult[0].refCount).to.be(1);
+
+    expect(wildcardSearchResult[0].data[wildcardSubscriptionReference1_same.id].some.custom).to.be("other-data");
+
+    expect(wildcardSearchResult[0].data[wildcardSubscriptionReference1.id]).to.be(undefined);
+
+    return done();
 
 ```
 
@@ -96,10 +345,10 @@ mocha test/perf
 
 #### performance:
 
-Between 35000 and 40000 wildcard searches in a tree with 300000 subscription nodes in one second. On an i7 macbook pro, with 8GB memory:
+Between 25000 and 30000 wildcard searches in a tree with 300000 subscription nodes in one second. On an i7 macbook pro, with 8GB memory:
 
 ```bash
 //when running mocha test/perf, output
-did 300000 wildcard inserts in 2570 milliseconds
-did 30000 wildcard searches in 772 milliseconds, in a tree with += 300000 nodes.
-```
+
+did 300000 wildcard inserts in 3125 milliseconds
+did 30000 wildcard searches in 1283 milliseconds, in a tree with += 300000 nodes.

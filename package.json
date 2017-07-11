@@ -1,6 +1,6 @@
 {
   "name": "wild-pare",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scripts": {
     "test": "mocha test"
   },
@@ -21,8 +21,7 @@
     "happner-2": "2.7.5",
     "lru-cache": "4.1.1",
     "shortid": "2.2.4",
-    "underscore.string": "^3.3.4",
-    "uniqid": "^4.1.1",
+    "uniqid": "4.1.1",
     "uuid": "3.1.0"
   }
 }

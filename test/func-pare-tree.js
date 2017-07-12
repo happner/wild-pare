@@ -379,7 +379,7 @@ describe('func wild pare', function () {
     searchResults['/precise/double'] = subscriptionTree.search('a/test/left');
     searchResults['and/double/left'] = subscriptionTree.search('a/test/left');
 
-    testLog('SANITY 1 RESULTS:::', searchResults);
+    //testLog('SANITY 1 RESULTS:::', searchResults);
 
     expect(searchResults['a/test/left'].length).to.be(3);
 
@@ -388,7 +388,7 @@ describe('func wild pare', function () {
     return done();
   });
 
-  it.only('sense checks subscriptions and their attendant queries, doing removes', function (done) {
+  it('sense checks subscriptions and their attendant queries, doing removes', function (done) {
 
     this.timeout(300000);
 

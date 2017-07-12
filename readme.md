@@ -359,4 +359,4 @@ did 30000 precise searches in 138 milliseconds, in a tree with += 300000 nodes.
 
 #### caveats
 
-- subscriptions that enclose the path with wildcards, ie */a/test/subscription/* will possibly perform slower, because they are stored and searched through in a different manner.
+- subscriptions that enclose the path with wildcards, ie \*/a/test/subscription/\* will possibly perform slower, because they are stored and searched through in a different manner.

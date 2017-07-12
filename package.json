@@ -15,6 +15,7 @@
   "dependencies": {
     "binary-search-tree": "0.2.6",
     "bluebird": "2.10.2",
+    "hyperid": "^1.2.0",
     "lru-cache": "4.1.1",
     "uniqid": "4.1.1"
   }

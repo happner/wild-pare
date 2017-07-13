@@ -8,7 +8,7 @@ Arbitrary wildcard searches in key/value stores are computationally expensive be
 
 wild-pare is in-memory subscription store that does arbitrary wildcard searches quickly, by implementing [louis's binary search tree](https://github.com/louischatriot/node-binary-search-tree) and branching the data by the key length, branches that are based on key lengths greater than the query segment (be it wildcard or precise), are pared away from the search.
 
-[Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key.
+[Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key. Mcollina's [hyperid](https://github.com/mcollina/hyperid) was adapted for 0.10 support - as the unique id generation for creating subscriptions was the biggest performance hurdle.
 
 #### still in development, so there be dragons...
 

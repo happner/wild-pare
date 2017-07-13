@@ -1,4 +1,4 @@
-describe('perf wild pear', function () {
+describe('perf wild pare', function () {
 
   this.timeout(5000);
 
@@ -53,8 +53,6 @@ describe('perf wild pear', function () {
         inserts++;
       });
     });
-
-    console.log('segments:::', segments);
 
     var endedInsert = Date.now();
 
@@ -113,8 +111,6 @@ describe('perf wild pear', function () {
 
     var startedSearches = Date.now();
 
-    console.log('segments:::', segments);
-
     subscriptions.forEach(function(subscriptionPath){
 
       subscriptionTree.search(subscriptionPath);
@@ -128,7 +124,7 @@ describe('perf wild pear', function () {
 
     testLog('did ' + searched + ' wildcard searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
 
-    console.log('analytics:::', JSON.stringify(subscriptionTree.__analytics, null, 2));
+    //console.log('analytics:::', JSON.stringify(subscriptionTree.__analytics, null, 2)); // did some profiling, found issue with the _id generation was slowing inserts down
 
     return done();
   });

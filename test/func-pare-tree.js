@@ -86,6 +86,7 @@ describe('func wild pare', function () {
 
     //duplicateright wildcard
     var wildcardSubscriptionReference1 = subscriptionTree.add('/a/wildcard/subscription/*', {key:'subscriber2', data:{some:{custom:"data"}}});
+
     var wildcardSubscriptionReference1_same = subscriptionTree.add('/a/wildcard/subscription/*', {key:'subscriber2', data:{some:{custom:"other-data"}}});
 
     //a left wildcard

@@ -1,6 +1,7 @@
 var LRU = require("lru-cache")
   , BinarySearchTree = require('binary-search-tree').BinarySearchTree
-  , uniqid = require('hyperid')//require('uniqid')
+  , hyperid = require('./lib/id')//require('uniqid')
+  , uniqid = new hyperid()
   ;
 
 function PareTree(options) {
@@ -43,6 +44,8 @@ PareTree.prototype.__initialize = function () {
   this.__allCount = 0;
 
   this.__complexCount = 0;
+
+  this.__ids = 0;
 
   this.__smallestPreciseSegment = 0;
 
@@ -119,8 +122,8 @@ PareTree.prototype.__addAll = function (pathInfo, recipient) {
 
 
 PareTree.prototype.__subscriptionId = function (recipientKey, subscriptionType, refCount, path) {
-  
-  return recipientKey.toString() + '&' + subscriptionType.toString() + '&' + (refCount?refCount.toString():"1") + '&' + uniqid() + '&' + path;
+
+  return recipientKey.toString() + '&' + subscriptionType.toString() + '&' + (refCount?refCount.toString():"1") + '&' +  uniqid() + '&' + path;
 };
 
 PareTree.prototype.__updateBounds = function (pathInfo, count) {
@@ -157,19 +160,19 @@ PareTree.prototype.__addSubscription = function (pathInfo, recipient) {
 
   var segment = pathInfo.segmentPath;
 
-  this.__averageTimeStart('this.__getTree');
+  //this.__averageTimeStart('this.__getTree'); //after trying to understand a flame graph I decided to do this, much simpler to understand...
 
   var tree = this.__getTree(pathInfo.type);
 
-  this.__averageTimeEnd('this.__getTree');
+  //this.__averageTimeEnd('this.__getTree');
 
-  this.__averageTimeStart('this.__getSegment');
+  //this.__averageTimeStart('this.__getSegment');
 
   var existingSegment = this.__getSegment(segment, tree);
 
-  this.__averageTimeEnd('this.__getSegment');
+  //this.__averageTimeEnd('this.__getSegment');
 
-  this.__averageTimeStart('!existingSegment');
+  //this.__averageTimeStart('!existingSegment');
 
   if (!existingSegment) {
 
@@ -182,11 +185,11 @@ PareTree.prototype.__addSubscription = function (pathInfo, recipient) {
     this.__updateBounds(pathInfo);
   }
 
-  this.__averageTimeEnd('!existingSegment');
+  //this.__averageTimeEnd('!existingSegment');
 
   var subscriptionList = existingSegment.subscriptions;
 
-  this.__averageTimeStart('subscriptionList.search(segment)');
+  //this.__averageTimeStart('subscriptionList.search(segment)');
 
   var existingSubscription = subscriptionList.search(segment)[0];
 
@@ -197,9 +200,9 @@ PareTree.prototype.__addSubscription = function (pathInfo, recipient) {
     subscriptionList.insert(segment, existingSubscription);
   }
 
-  this.__averageTimeEnd('subscriptionList.search(segment)');
+  //this.__averageTimeEnd('subscriptionList.search(segment)');
 
-  this.__averageTimeStart('existingSubscription.recipients[recipient.key]');
+  //this.__averageTimeStart('existingSubscription.recipients[recipient.key]');
 
   var existingRecipient = existingSubscription.recipients[recipient.key];
 
@@ -219,15 +222,15 @@ PareTree.prototype.__addSubscription = function (pathInfo, recipient) {
 
   existingRecipient.refCount += recipient.refCount ? recipient.refCount : 1;
 
-  this.__averageTimeEnd('existingSubscription.recipients[recipient.key]');
+  //this.__averageTimeEnd('existingSubscription.recipients[recipient.key]');
 
-  this.__averageTimeStart('this.__subscriptionId');
+  //this.__averageTimeStart('this.__subscriptionId');
 
   var subscriptionId = this.__subscriptionId(recipient.key, pathInfo.type, recipient.refCount, pathInfo.path);
 
   existingRecipient.data[subscriptionId] = recipient.data;
 
-  this.__averageTimeEnd('this.__subscriptionId');
+  //this.__averageTimeEnd('this.__subscriptionId');
 
   return {id: subscriptionId};
 };

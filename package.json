@@ -12,6 +12,7 @@
     "shortid": "2.2.4"
   },
   "dependencies": {
+    "async": "^2.5.0",
     "binary-search-tree": "0.2.6",
     "bluebird": "2.10.2",
     "lru-cache": "4.1.1",

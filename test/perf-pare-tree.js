@@ -10,6 +10,8 @@ describe('perf wild pare', function () {
 
   var VERBOSE = true;
 
+  var async = require('async');
+
   var testLog = function(message, object){
     if (VERBOSE){
       console.log(message);
@@ -23,7 +25,7 @@ describe('perf wild pare', function () {
 
   var CLIENT_COUNT = 10;
 
-  it('adds and verifies random non wildcard-subscriptions ', function (done) {
+  it('adds and verifies random precise subscriptions ', function (done) {
 
     this.timeout(300000);
 
@@ -39,42 +41,47 @@ describe('perf wild pare', function () {
 
     var startedInsert = Date.now();
 
-    var segments = {};
+    async.eachSeries(subscriptions, function(subscriptionPath, subscriptionPathCallback){
 
-    subscriptions.forEach(function(subscriptionPath){
+      async.eachSeries(clients, function(sessionId, sessionIdCallback){
 
-      if (!segments[(subscriptionPath.substring(0, subscriptionPath.length - 1) + '*').length]) segments[(subscriptionPath.substring(0, subscriptionPath.length - 1) + '*').length] = 1;
-      else segments[(subscriptionPath.substring(0, subscriptionPath.length - 1) + '*').length]++;
-
-      clients.forEach(function(sessionId){
-
-        subscriptionTree.add(subscriptionPath, {key:sessionId, data:{test:"data"}});
-
+        subscriptionTree.add(subscriptionPath, {key:sessionId, data:{test:"data"}}, sessionIdCallback);
         inserts++;
+
+      }, subscriptionPathCallback);
+
+    }, function(e){
+
+      if (e) return done(e);
+
+      var endedInsert = Date.now();
+
+      var startedSearches = Date.now();
+
+      async.eachSeries(subscriptions, function(subscriptionPath, subscriptionPathCB){
+
+        searched++;
+        subscriptionTree.search(subscriptionPath, null, subscriptionPathCB);
+
+      }, function(e){
+
+        if (e) return done(e);
+
+        var endedSearches = Date.now();
+
+        testLog('did ' + inserts + ' precise inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
+
+        testLog('did ' + searched + ' precise searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
+
+        //console.log('analytics:::', JSON.stringify(subscriptionTree.__analytics, null, 2)); // did some profiling, found issue with the _id generation was slowing inserts down
+
+        return done();
+
       });
     });
-
-    var endedInsert = Date.now();
-
-    var startedSearches = Date.now();
-
-    subscriptions.forEach(function(subscriptionPath){
-
-      subscriptionTree.search(subscriptionPath);
-
-      searched++;
-    });
-
-    var endedSearches = Date.now();
-
-    testLog('did ' + inserts + ' precise inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
-
-    testLog('did ' + searched + ' precise searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
-
-    return done();
   });
 
-  it('adds and verifies random wildcard-subscriptions ', function (done) {
+  it('adds and verifies random wildcard subscriptions ', function (done) {
 
     this.timeout(300000);
 
@@ -92,48 +99,56 @@ describe('perf wild pare', function () {
 
     var segments = {};
 
-    subscriptions.forEach(function(subscriptionPath){
+    async.eachSeries(subscriptions, function(subscriptionPath, subscriptionPathCallback){
 
       subscriptionPath = subscriptionPath.substring(0, subscriptionPath.length - 1) + '*';
 
       if (!segments[(subscriptionPath.substring(0, subscriptionPath.length - 1) + '*').length]) segments[(subscriptionPath.substring(0, subscriptionPath.length - 1) + '*').length] = 1;
       else segments[(subscriptionPath.substring(0, subscriptionPath.length - 1) + '*').length]++;
 
-      clients.forEach(function(sessionId){
+      async.eachSeries(clients, function(sessionId, sessionIdCallback){
 
-        subscriptionTree.add(subscriptionPath, {key:sessionId, data:{test:"data"}});
-
+        subscriptionTree.add(subscriptionPath, {key:sessionId, data:{test:"data"}}, sessionIdCallback);
         inserts++;
+
+      }, subscriptionPathCallback);
+
+    }, function(e){
+
+      if (e) return done(e);
+
+      var endedInsert = Date.now();
+
+      var startedSearches = Date.now();
+
+      async.eachSeries(subscriptions, function(subscriptionPath, subscriptionPathCB){
+
+        searched++;
+        subscriptionTree.search(subscriptionPath, null, subscriptionPathCB);
+
+      }, function(e){
+
+        if (e) return done(e);
+
+        var endedSearches = Date.now();
+
+        testLog('did ' + inserts + ' wildcard inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
+
+        testLog('did ' + searched + ' wildcard searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
+
+        //console.log('analytics:::', JSON.stringify(subscriptionTree.__analytics, null, 2)); // did some profiling, found issue with the _id generation was slowing inserts down
+
+        return done();
+
       });
     });
-
-    var endedInsert = Date.now();
-
-    var startedSearches = Date.now();
-
-    subscriptions.forEach(function(subscriptionPath){
-
-      subscriptionTree.search(subscriptionPath);
-
-      searched++;
-    });
-
-    var endedSearches = Date.now();
-
-    testLog('did ' + inserts + ' wildcard inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
-
-    testLog('did ' + searched + ' wildcard searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
-
-    //console.log('analytics:::', JSON.stringify(subscriptionTree.__analytics, null, 2)); // did some profiling, found issue with the _id generation was slowing inserts down
-
-    return done();
   });
 
   var N_SUBSCRIPTION_COUNT = 10000;
 
   var SEARCHES = 100;
 
-  it('searches N subscriptions', function (done) {
+  it('searches N subscriptions ', function (done) {
 
     this.timeout(300000);
 

@@ -91,8 +91,6 @@ describe('func wild pare', function () {
 
   });
 
-
-
   it('adds an all subscription', function (done) {
 
     var pareTree = new PareTree();
@@ -143,11 +141,11 @@ describe('func wild pare', function () {
 
     pareTree.__addAll(segmented, {key:recipient, data:'test'});
 
-    expect(pareTree.__allCount).to.be(1);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.ALL]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppendAll(recipients);
+    pareTree.__searchAndAppend('*', recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -157,39 +155,34 @@ describe('func wild pare', function () {
 
   });
 
-  it('tests adding a subscription id and pushing the path data to an internal index', function(){
-
-  });
-
-  it('tests doing a wildcard search', function(){
-
-    //we create a bunch of subscriptions, thn search using a wildcard
-    //NB - this functionality makes permissions, and deep searching possible, ie: /wild/* and /wild/card/* in /wi*
-
-  });
-
-  //mmmmm
-
-  var __appendRecipients = function (path, segmentPath, branch, subscriptions) {
-
-    var _this = this;
-
-    var existingSegments = branch.segments.search(segmentPath);
-
-    existingSegments.forEach(function(segment){
-
-      if ( (segment.type === _this.SEGMENT_TYPE.WILDCARD_COMPLEX && path.indexOf(segmentPath) > -1)
-        || (segment.type === _this.SEGMENT_TYPE.WILDCARD_RIGHT && path.indexOf(segmentPath) == 0)
-        || (segment.type === _this.SEGMENT_TYPE.WILDCARD_LEFT && path.substring(path.length - segmentPath.length, path.length) == segmentPath)
-      )
-        segment.recipients.forEach(function(recipient){
-
-          if ((recipient.complex && _this.__wildcardMatch(recipient.path, path) == false) return;
-
-          _this.__appendQueryRecipient(recipient, subscriptions);
-        });
-    });
-  };
+  // it('tests adding a subscription id and pushing the path data to an internal index', function(done){
+  //
+  //   var pareTree = new PareTree();
+  //
+  //   var testData = {
+  //     key:'testKey',
+  //     type:pareTree.SEGMENT_TYPE.ALL,
+  //     path:'testPath'
+  //   };
+  //
+  //   var id = pareTree.__createId(testData.key, testData.type, testData.path);
+  //
+  //   var idParts = pareTree.__subscriptionData.search(id)[0];
+  //
+  //   expect(idParts).to.eql(testData);
+  //
+  //   expect(pareTree.__counts[testData.type]).to.be(1);
+  //
+  //   pareTree.__releaseId(id);
+  //
+  //   idParts = pareTree.__subscriptionData.search(id)[0];
+  //
+  //   expect(idParts).to.be(undefined);
+  //
+  //   expect(pareTree.__counts[testData.type]).to.be(0);
+  //
+  //   done();
+  // });
 
   it('adds a left wildcard subscription', function (done) {
 
@@ -201,17 +194,210 @@ describe('func wild pare', function () {
 
     pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
-    expect(pareTree.__wildcardCount).to.be(1);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppendWildcardLeft('test/a/wildcard/left', recipients);
+    pareTree.__searchAndAppend('test/a/wildcard/left', recipients);
 
     expect(recipients.length).to.be(1);
 
     expect(recipients[0].data).to.be('test');
 
     done();
+
+  });
+
+  it('adds a right wildcard subscription', function (done) {
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('/a/wildcard/right/*');
+
+    var recipient = 'test-wildcard-right-recipient';
+
+    pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
+
+    var recipients = [];
+
+    pareTree.__searchAndAppend('/a/wildcard/right/test', recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    done();
+
+  });
+
+  it('adds a complex wildcard subscription', function (done) {
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('*/a/wildcard/complex/*');
+
+    var recipient = 'test-wildcard-complex-recipient';
+
+    pareTree.__addSubscription(segmented, {key:recipient, data:'test-complex'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
+
+    var recipients = [];
+
+    pareTree.__searchAndAppend('doing/a/wildcard/complex/test', recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test-complex');
+
+    expect(recipients[0].key).to.be('test-wildcard-complex-recipient');
+
+    done();
+  });
+
+  it('adds and removes a left wildcard subscription', function (done) {
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('*/a/wildcard/left');
+
+    var recipient = 'test-wildcard-left-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
+
+    var recipients = [];
+
+    pareTree.__searchAndAppend('test/a/wildcard/left', recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    expect(pareTree.__trunkLeft.data.length).to.be(1);
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(0);
+
+    expect(pareTree.__trunkLeft.data.length).to.be(0);
+
+    done();
+
+  });
+
+  it('adds and removes a right wildcard subscription', function (done) {
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('/a/wildcard/right/*');
+
+    var recipient = 'test-wildcard-right-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
+
+    var recipients = [];
+
+    pareTree.__searchAndAppend('/a/wildcard/right/test', recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    expect(pareTree.__trunkRight.data.length).to.be(1);
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(0);
+
+    expect(pareTree.__trunkRight.data.length).to.be(0);
+
+    done();
+
+  });
+
+  it('adds and removes a complex wildcard subscription', function (done) {
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('*/a/wildcard/complex/*');
+
+    var recipient = 'test-wildcard-complex-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test-complex'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
+
+    var recipients = [];
+
+    pareTree.__searchAndAppend('doing/a/wildcard/complex/test', recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test-complex');
+
+    expect(recipients[0].key).to.be('test-wildcard-complex-recipient');
+
+    expect(pareTree.__trunkComplex.data.length).to.be(1);
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(0);
+
+    expect(pareTree.__trunkComplex.data.length).to.be(0);
+
+    done();
+  });
+
+  it('adds and removes an all subscription', function (done) {
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('*');
+
+    var recipient = 'test-all-recipient';
+
+    var subscriptionReference = pareTree.__addAll(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.ALL]).to.be(1);
+
+    var recipients = [];
+
+    pareTree.__searchAndAppend('*', recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    expect(pareTree.__trunkAll.recipients.data.length).to.be(1);
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.ALL]).to.be(0);
+
+    expect(pareTree.__trunkAll.recipients.data.length).to.be(0);
+
+    done();
+
+  });
+
+  xit('tests doing a wildcard search', function(){
+
+    //we create a bunch of subscriptions, then search using a wildcard
+    //NB - this functionality makes permissions, and deep searching possible, ie: /wild/* and /wild/card/* in /wi*
 
   });
 

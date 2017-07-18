@@ -268,8 +268,7 @@ npm install wild-pare
 run the tests locally:
 git clone https://github.com/happner/wild-pare.git && cd wild-pare && npm install
 
-mocha test/func
-mocha test/perf
+mocha test
 
 ```
 

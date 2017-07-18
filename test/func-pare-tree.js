@@ -370,6 +370,8 @@ describe('func wild pare', function () {
 
     var subscriptionReference = pareTree.__addAll(segmented, {key:recipient, data:'test'});
 
+    var recipient1 = 'test-all-recipient1';
+
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.ALL]).to.be(1);
 
     var recipients = [];
@@ -380,7 +382,7 @@ describe('func wild pare', function () {
 
     expect(recipients[0].data).to.be('test');
 
-    expect(pareTree.__trunkAll.recipients.data.length).to.be(1);
+    expect(Object.keys(pareTree.__trunkAll.recipients).length).to.be(1);
 
     var removeReference = pareTree.__removeSpecific(subscriptionReference);
 
@@ -388,10 +390,9 @@ describe('func wild pare', function () {
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.ALL]).to.be(0);
 
-    expect(pareTree.__trunkAll.recipients.data.length).to.be(0);
+    expect(Object.keys(pareTree.__trunkAll.recipients).length).to.be(0);
 
     done();
-
   });
 
   xit('tests doing a wildcard search', function(){

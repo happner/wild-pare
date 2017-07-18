@@ -28,7 +28,9 @@ wild-pare is in-memory subscription store that does arbitrary wildcard searches 
 #### quickstart
 
 ```bash
+
 npm i wild-pare --save
+
 ```
 
 ```javascript
@@ -47,11 +49,10 @@ subscriptionRef1 = subscriptionTree.add('/a/subscription/path', {
   //returns:
 
   // {
-  //   "id": "subscriber1&0&fb6zBhAWQM+kWDM/XWhUvg/0&/a/subscription/path"
+  //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
   // }
 
-var queryResults1 = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/precise/subscription'})
-
+  var queryResults1 = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/precise/subscription'})
 
   //returns a single subscription:
 
@@ -64,29 +65,27 @@ var queryResults1 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 12
   //     },
-  //     "id": "subscriber1&0&fb6zBhAWQM+kWDM/XWhUvg/0&/a/subscription/path"
+  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
   //   }
   // ]
 
 
   //add another subscription to the same path but with different data:
 
-var subscriptionRef2 = subscriptionTree.add('/a/subscription/path', {
-  key: 'subscriber1',
-  data: {some: {custom: "data"}, value: 6}
-});
+  var subscriptionRef2 = subscriptionTree.add('/a/subscription/path', {
+    key: 'subscriber1',
+    data: {some: {custom: "data"}, value: 6}
+  });
 
   //returns:
 
   // {
-  //   "id": "subscriber1&0&fb6zBhAWQM+kWDM/XWhUvg/1&/a/subscription/path"
+  //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
   // }
-
 
   //query the tree:
 
-var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/subscription/path'})
-
+  var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/subscription/path'})
 
   //returns our subscriptions:
 
@@ -99,7 +98,7 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 12
   //     },
-  //     "id": "subscriber1&0&fb6zBhAWQM+kWDM/XWhUvg/0&/a/subscription/path"
+  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
   //   },
   //   {
   //     "key": "subscriber1",
@@ -109,7 +108,7 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 6
   //     },
-  //     "id": "subscriber1&0&fb6zBhAWQM+kWDM/XWhUvg/1&/a/subscription/path"
+  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
   //   }
   // ]
 
@@ -123,7 +122,7 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
 
   // [
   //   {
-  //     "id": "subscriber1&0&fb6zBhAWQM+kWDM/XWhUvg/0&/a/subscription/path"
+  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
   //   }
   // ]
 
@@ -142,7 +141,7 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 6
   //     },
-  //     "id": "subscriber1&0&fb6zBhAWQM+kWDM/XWhUvg/1&/a/subscription/path"
+  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
   //   }
   // ]
 
@@ -185,7 +184,7 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 6
   //     },
-  //     "id": "subscriber1&0&fb6zBhAWQM+kWDM/XWhUvg/1&/a/subscription/path"
+  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
   //   },
   //   {
   //     "key": "subscriber2",
@@ -195,7 +194,7 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 5
   //     },
-  //     "id": "subscriber2&2&fb6zBhAWQM+kWDM/XWhUvg/2&/a/subscription/"
+  //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
   //   },
   //   {
   //     "key": "subscriber3",
@@ -205,7 +204,7 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 15
   //     },
-  //     "id": "subscriber3&1&fb6zBhAWQM+kWDM/XWhUvg/3&/subscription/path"
+  //     "id": "subscriber3&1&D7R8LYFvSRCTAP5s88Uonw/3&/subscription/path"
   //   }
   // ]
 
@@ -224,7 +223,7 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 5
   //     },
-  //     "id": "subscriber2&2&fb6zBhAWQM+kWDM/XWhUvg/2&/a/subscription/"
+  //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
   //   }
   // ]
 
@@ -243,7 +242,7 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 6
   //     },
-  //     "id": "subscriber1&0&fb6zBhAWQM+kWDM/XWhUvg/1&/a/subscription/path"
+  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
   //   },
   //   {
   //     "key": "subscriber2",
@@ -253,9 +252,10 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscri
   //       },
   //       "value": 5
   //     },
-  //     "id": "subscriber2&2&fb6zBhAWQM+kWDM/XWhUvg/2&/a/subscription/"
+  //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
   //   }
   // ]
+
 
 ```
 
@@ -289,4 +289,5 @@ did 30000 precise searches in 138 milliseconds, in a tree with += 300000 nodes.
 
 #### caveats
 
-- subscriptions that enclose the path with wildcards, ie \*/a/test/subscription/\* will possibly perform slower, because they are stored and searched through in a different manner.
+- subscriptions that enclose the path with wildcards, ie \*/a/test/subscription/\* will possibly perform slower, because they are stored and searched through in a different manner and will always involve regex comparisons.
+- although it is very fast, the library is synchronous (blocking) - be aware of this in high-volume environments, I am thinking of an asynch version that stores data on file, making this a database of sorts.

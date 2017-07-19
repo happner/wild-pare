@@ -373,7 +373,7 @@ describe('sanity tests wild pare', function () {
 
     expect(wildcardSearchResult.length).to.be(4);
 
-    expect(wildcardSearchResult[2].data.some.custom).to.be("other-data");
+    expect(wildcardSearchResult[0].data.some.custom).to.be("other-data");
 
     expect(wildcardSearchResult[1].data.some.custom).to.be("data");
 
@@ -469,7 +469,7 @@ describe('sanity tests wild pare', function () {
     return done();
   });
 
-  it('sense checks subscriptions and their attendant queries, doing removes', function (done) {
+  it.only('sense checks subscriptions and their attendant queries, doing removes', function (done) {
 
     this.timeout(300000);
 
@@ -558,6 +558,8 @@ describe('sanity tests wild pare', function () {
 
     var tripleAllSubscription3 = subscriptionTree.add('**', {key: allTripleKey, data: {test: 18}});
 
+    console.log(JSON.stringify(subscriptionTree.search(), null, 2));
+
     expect( subscriptionTree.search().length).to.be(15);
 
     searchResultsBefore.push({path: 'a/test/left', results: subscriptionTree.search('a/test/left')});
@@ -596,29 +598,29 @@ describe('sanity tests wild pare', function () {
     // //
     searchResultsBefore.push({path: 'and/double/left', results: subscriptionTree.search('and/double/left')});
 
-    expect(subscriptionTree.search('*').length).to.be(15);
+    expect(subscriptionTree.search('*').length).to.be(14);
 
     subscriptionTree.remove(allSubscription);
 
-    expect(subscriptionTree.search('*').length).to.be(14);
+    expect(subscriptionTree.search('*').length).to.be(13);
 
     subscriptionTree.remove({id: leftSubscription.id});
 
     subscriptionTree.remove('double/right/*');
 
-    expect(subscriptionTree.search('*').length).to.be(11);
+    expect(subscriptionTree.search('*').length).to.be(10);
 
     var allResults = subscriptionTree.search('*');
 
-    expect(allResults[0].data.test).to.be(10);
+    expect(allResults[0].data.test).to.be(4);
 
     subscriptionTree.remove(tripleAllSubscription2);
 
     allResults = subscriptionTree.search('*');
 
-    expect(subscriptionTree.search('*').length).to.be(10);
+    expect(subscriptionTree.search('*').length).to.be(9);
 
-    expect(allResults[0].data.test).to.be(10);
+    expect(allResults[0].data.test).to.be(4);
 
     subscriptionTree.remove('*/test/left');
 

@@ -603,9 +603,9 @@ PareTree.prototype.__iteratePrecise = function (searchPath, subscriptions, handl
 
   _this.__trunkPrecise.search(searchPath.path.length).forEach(function (segment) {
 
-    var branch = segment.branches[searchPath.path];
-
-    if (branch)  handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.PRECISE);
+    segment.branches.search(searchPath.path).forEach(function(branch){
+      handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.PRECISE);
+    });
   });
 };
 

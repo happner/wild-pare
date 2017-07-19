@@ -116,8 +116,6 @@ describe('performance tests wild pare', function () {
 
     testLog('did ' + searched + ' wildcard searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
 
-    console.log('analytics:::', JSON.stringify(subscriptionTree.__analytics, null, 2));
-    
     return done();
   });
 
@@ -130,8 +128,6 @@ describe('performance tests wild pare', function () {
 
     this.timeout(10000);
 
-    console.log('searching N:::');
-
     var subscriptions = random.randomPaths({duplicate:DUPLICATE_KEYS, count:N_SUBSCRIPTION_COUNT});
 
     var clients = random.string({count:CLIENT_COUNT});
@@ -139,8 +135,6 @@ describe('performance tests wild pare', function () {
     var subscriptionTree = new PareTree();
 
     var subscriptionResults = {};
-
-    console.log('adding subs:::');
 
     subscriptions.forEach(function(subscriptionPath){
 

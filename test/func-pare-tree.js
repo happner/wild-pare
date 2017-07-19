@@ -19,25 +19,25 @@ describe('functional tests wild pare', function () {
     }
   };
 
-  it('tests the permutate function', function (done) {
-
-    var pareTree = new PareTree();
-
-    //var mutations = pareTree.__permutate('simon', pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX);
-
-    pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT] = 1;
-    pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT] = 1;
-
-    var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_LEFT);
-    
-    expect(mutations.length).to.be(23);
-
-    var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
-
-    expect(mutations.length).to.be(23);
-
-    done();
-  });
+  // it('tests the permutate function', function (done) {
+  //
+  //   var pareTree = new PareTree();
+  //
+  //   //var mutations = pareTree.__permutate('simon', pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX);
+  //
+  //   pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT] = 1;
+  //   pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT] = 1;
+  //
+  //   var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_LEFT);
+  //
+  //   expect(mutations.length).to.be(23);
+  //
+  //   var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
+  //
+  //   expect(mutations.length).to.be(23);
+  //
+  //   done();
+  // });
 
   // it('gets the largest contiguous section', function (done) {
   //
@@ -222,8 +222,6 @@ describe('functional tests wild pare', function () {
 
     var recipient = 'test-wildcard-right-recipient';
 
-    console.log('segmented:::', segmented);
-
     pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
@@ -250,11 +248,11 @@ describe('functional tests wild pare', function () {
 
     pareTree.__addSubscription(segmented, {key:recipient, data:'test-complex'});
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(1);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend('doing/a/wildcard/complex/test', recipients);
+    pareTree.__searchAndAppend({path:'doing/a/wildcard/complex/test'}, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -275,11 +273,11 @@ describe('functional tests wild pare', function () {
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(1);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend('test/a/wildcard/left', recipients);
+    pareTree.__searchAndAppend({path:'test/a/wildcard/left'}, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -289,7 +287,7 @@ describe('functional tests wild pare', function () {
 
     expect(removeReference.id).to.be(subscriptionReference.id);
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(0);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(0);
 
     done();
 
@@ -309,7 +307,7 @@ describe('functional tests wild pare', function () {
 
     var recipients = [];
 
-    pareTree.__searchAndAppend('/a/wildcard/right/test', recipients);
+    pareTree.__searchAndAppend({path:'/a/wildcard/right/test'}, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -335,11 +333,11 @@ describe('functional tests wild pare', function () {
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test-complex'});
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(1);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend('doing/a/wildcard/complex/test', recipients);
+    pareTree.__searchAndAppend({path:'doing/a/wildcard/complex/test'}, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -351,7 +349,7 @@ describe('functional tests wild pare', function () {
 
     expect(removeReference.id).to.be(subscriptionReference.id);
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(0);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(0);
 
     done();
   });
@@ -372,7 +370,7 @@ describe('functional tests wild pare', function () {
 
     var recipients = [];
 
-    pareTree.__searchAndAppend('*', recipients);
+    pareTree.__searchAndAppend({path:'*'}, recipients);
 
     expect(recipients.length).to.be(1);
 

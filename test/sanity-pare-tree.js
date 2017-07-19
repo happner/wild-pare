@@ -373,7 +373,7 @@ describe('sanity tests wild pare', function () {
 
     expect(wildcardSearchResult.length).to.be(4);
 
-    expect(wildcardSearchResult[0].data.some.custom).to.be("other-data");
+    expect(wildcardSearchResult[2].data.some.custom).to.be("other-data");
 
     expect(wildcardSearchResult[1].data.some.custom).to.be("data");
 
@@ -502,6 +502,17 @@ describe('sanity tests wild pare', function () {
     var searchResultsBefore = [];
 
     var searchResultsAfter = [];
+    // /test/complex/
+    // double/right/
+    var doubleRightSubscription1 = subscriptionTree.add('double/right/*', {
+      key: doubleSubscribeRightKey,
+      data: {test: 12}
+    });
+
+    var doubleRightSubscription2 = subscriptionTree.add('double/right/*', {
+      key: doubleSubscribeRightKey,
+      data: {test: 13}
+    });
 
     var allSubscription = subscriptionTree.add('***', {key: allKey, data: {test: 1}});
 
@@ -531,16 +542,6 @@ describe('sanity tests wild pare', function () {
       data: {test: 11}
     });
 
-    var doubleRightSubscription1 = subscriptionTree.add('double/right/*', {
-      key: doubleSubscribeRightKey,
-      data: {test: 12}
-    });
-
-    var doubleRightSubscription2 = subscriptionTree.add('double/right/*', {
-      key: doubleSubscribeRightKey,
-      data: {test: 13}
-    });
-
     var doubleLeftSubscription1 = subscriptionTree.add('*/double/left', {
       key: doubleSubscribeLeftKey,
       data: {test: 14}
@@ -556,6 +557,8 @@ describe('sanity tests wild pare', function () {
     var tripleAllSubscription2 = subscriptionTree.add('*', {key: allTripleKey, data: {test: 17}});
 
     var tripleAllSubscription3 = subscriptionTree.add('**', {key: allTripleKey, data: {test: 18}});
+
+    expect( subscriptionTree.search().length).to.be(15);
 
     searchResultsBefore.push({path: 'a/test/left', results: subscriptionTree.search('a/test/left')});
 
@@ -593,27 +596,29 @@ describe('sanity tests wild pare', function () {
     // //
     searchResultsBefore.push({path: 'and/double/left', results: subscriptionTree.search('and/double/left')});
 
-    expect(subscriptionTree.search('*').length).to.be(4);
+    expect(subscriptionTree.search('*').length).to.be(15);
 
     subscriptionTree.remove(allSubscription);
 
-    expect(subscriptionTree.search('*').length).to.be(3);
+    expect(subscriptionTree.search('*').length).to.be(14);
 
     subscriptionTree.remove({id: leftSubscription.id});
 
     subscriptionTree.remove('double/right/*');
 
-    expect(subscriptionTree.search('*').length).to.be(3);
+    expect(subscriptionTree.search('*').length).to.be(11);
 
     var allResults = subscriptionTree.search('*');
 
-    expect(allResults[0].data.test).to.be(16);
+    expect(allResults[0].data.test).to.be(10);
 
     subscriptionTree.remove(tripleAllSubscription2);
 
     allResults = subscriptionTree.search('*');
 
-    expect(allResults[0].data.test).to.be(16);
+    expect(subscriptionTree.search('*').length).to.be(10);
+
+    expect(allResults[0].data.test).to.be(10);
 
     subscriptionTree.remove('*/test/left');
 
@@ -662,6 +667,40 @@ describe('sanity tests wild pare', function () {
     subscriptionTree.remove('*');
 
     expect(subscriptionTree.search('*').length).to.be(0);
+
+    return done();
+  });
+
+  it('sense checks subscriptions and their attendant queries, removing and adding various subscription types', function (done) {
+
+    this.timeout(300000);
+
+    var subscriptionTree = new PareTree();
+
+    var allKey = shortid.generate();
+
+    var doubleSubscribeRightKey = shortid.generate();
+
+    var allSubscription = subscriptionTree.add('***', {key: allKey, data: {test: 1}});
+
+    var doubleRightSubscription1 = subscriptionTree.add('double/right/*', {
+      key: doubleSubscribeRightKey,
+      data: {test: 12}
+    });
+
+    var doubleRightSubscription2 = subscriptionTree.add('double/right/*', {
+      key: doubleSubscribeRightKey,
+      data: {test: 13}
+    });
+
+    var doubleRightSubscription3 = subscriptionTree.add('*double/left1/', {
+      key: doubleSubscribeRightKey,
+      data: {test: 13}
+    });
+
+    expect( subscriptionTree.search().length).to.be(4);
+
+    expect( subscriptionTree.search('double/left1/').length).to.be(2);
 
     return done();
   });

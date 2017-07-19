@@ -19,21 +19,40 @@ describe('functional tests wild pare', function () {
     }
   };
 
-
-  it('gets the largest contiguous section', function (done) {
+  it('tests the permutate function', function (done) {
 
     var pareTree = new PareTree();
 
-    var testPath = "*a/testsegment*smallest/*smallerthan*";
+    //var mutations = pareTree.__permutate('simon', pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX);
 
-    var largestContiguous = pareTree.__getLargestContiguous({
-      pathSegments:testPath.split('*')
-    });
+    pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT] = 1;
+    pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT] = 1;
 
-    expect(largestContiguous).to.be('a/testsegment');
+    var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_LEFT);
+    
+    expect(mutations.length).to.be(23);
+
+    var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
+
+    expect(mutations.length).to.be(23);
 
     done();
   });
+
+  // it('gets the largest contiguous section', function (done) {
+  //
+  //   var pareTree = new PareTree();
+  //
+  //   var testPath = "*a/testsegment*smallest/*smallerthan*";
+  //
+  //   var largestContiguous = pareTree.__getLargestContiguous({
+  //     pathSegments:testPath.split('*')
+  //   });
+  //
+  //   expect(largestContiguous).to.be('a/testsegment');
+  //
+  //   done();
+  // });
 
   it('segments the 4 types of path', function (done) {
 
@@ -59,9 +78,9 @@ describe('functional tests wild pare', function () {
 
     expect(rightSegment.type).to.be(pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
 
-    expect(leftComplexSegment.type).to.be(pareTree.SEGMENT_TYPE.WILDCARD_LEFT);
+    expect(leftComplexSegment.type).to.be(pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX);
 
-    expect(rightComplexSegment.type).to.be(pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
+    expect(rightComplexSegment.type).to.be(pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX);
 
     expect(complexSegment.type).to.be(pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX);
 
@@ -71,21 +90,9 @@ describe('functional tests wild pare', function () {
 
     expect(rightSegment.segmentPath).to.be('right/path/');
 
-    expect(leftSegment.complex).to.be(false);
-
-    expect(rightSegment.complex).to.be(false);
-
     expect(complexSegment.segmentPath).to.be('a/complex/segment');
 
     expect(anotherComplexSegment.segmentPath).to.be('another/complex/segment');
-
-    expect(leftComplexSegment.complex).to.be(true);
-
-    expect(rightComplexSegment.complex).to.be(true);
-
-    expect(complexSegment.complex).to.be(true);
-
-    expect(anotherComplexSegment.complex).to.be(true);
 
     done();
 
@@ -98,12 +105,11 @@ describe('functional tests wild pare', function () {
     var subscriptions = [];
 
     pareTree.__appendQueryRecipient({
-      refCount:1,
       key:'testKey',
       subscriptions:[
         {id:'testId1', data:{test:'data1'}}
       ]
-    }, subscriptions);
+    }, '*/test/path', subscriptions, pareTree.SEGMENT_TYPE.WILDCARD_LEFT);
 
     pareTree.__appendQueryRecipient({
       refCount:2,
@@ -112,7 +118,7 @@ describe('functional tests wild pare', function () {
         {id:'testId2', data:{other:'data'}},
         {id:'testId3', data:{different:'data'}}
       ]
-    }, subscriptions);
+    },  '/test/path/*', subscriptions, pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
 
     expect(subscriptions.length).to.be(3);
 
@@ -145,7 +151,7 @@ describe('functional tests wild pare', function () {
 
     var recipients = [];
 
-    pareTree.__searchAndAppend('*', recipients);
+    pareTree.__searchAndAppend({path:'*'}, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -198,7 +204,7 @@ describe('functional tests wild pare', function () {
 
     var recipients = [];
 
-    pareTree.__searchAndAppend('test/a/wildcard/left', recipients);
+    pareTree.__searchAndAppend({path:'test/a/wildcard/left'}, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -216,13 +222,15 @@ describe('functional tests wild pare', function () {
 
     var recipient = 'test-wildcard-right-recipient';
 
+    console.log('segmented:::', segmented);
+
     pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend('/a/wildcard/right/test', recipients);
+    pareTree.__searchAndAppend({path:'/a/wildcard/right/test'}, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -242,7 +250,7 @@ describe('functional tests wild pare', function () {
 
     pareTree.__addSubscription(segmented, {key:recipient, data:'test-complex'});
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(1);
 
     var recipients = [];
 
@@ -267,7 +275,7 @@ describe('functional tests wild pare', function () {
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(1);
 
     var recipients = [];
 
@@ -277,15 +285,11 @@ describe('functional tests wild pare', function () {
 
     expect(recipients[0].data).to.be('test');
 
-    expect(pareTree.__trunkLeft.data.length).to.be(1);
-
     var removeReference = pareTree.__removeSpecific(subscriptionReference);
 
     expect(removeReference.id).to.be(subscriptionReference.id);
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(0);
-
-    expect(pareTree.__trunkLeft.data.length).to.be(0);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(0);
 
     done();
 
@@ -311,15 +315,11 @@ describe('functional tests wild pare', function () {
 
     expect(recipients[0].data).to.be('test');
 
-    expect(pareTree.__trunkRight.data.length).to.be(1);
-
     var removeReference = pareTree.__removeSpecific(subscriptionReference);
 
     expect(removeReference.id).to.be(subscriptionReference.id);
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(0);
-
-    expect(pareTree.__trunkRight.data.length).to.be(0);
 
     done();
 
@@ -335,7 +335,7 @@ describe('functional tests wild pare', function () {
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test-complex'});
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(1);
 
     var recipients = [];
 
@@ -347,15 +347,11 @@ describe('functional tests wild pare', function () {
 
     expect(recipients[0].key).to.be('test-wildcard-complex-recipient');
 
-    expect(pareTree.__trunkComplex.data.length).to.be(1);
-
     var removeReference = pareTree.__removeSpecific(subscriptionReference);
 
     expect(removeReference.id).to.be(subscriptionReference.id);
 
-    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(0);
-
-    expect(pareTree.__trunkComplex.data.length).to.be(0);
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD]).to.be(0);
 
     done();
   });

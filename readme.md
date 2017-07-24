@@ -8,7 +8,7 @@ Arbitrary wildcard searches in key/value stores are computationally expensive be
 
 wild-pare is in-memory subscription store that does arbitrary wildcard searches quickly, by implementing [louis's binary search tree](https://github.com/louischatriot/node-binary-search-tree) and branching the data by the key length, branches that are based on key lengths greater than the query segment (be it wildcard or precise), are pared away from the search.
 
-[Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key. Mcollina's [hyperid](https://github.com/mcollina/hyperid) was adapted for 0.10 support - as the unique id generation for creating subscriptions was the biggest performance hurdle.
+[Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key. Mcollina's [hyperid](https://github.com/mcollina/hyperid) was adapted and included locally - as the unique id generation for creating subscriptions was the biggest performance hurdle.
 
 #### abstract tree structure:
 
@@ -269,21 +269,20 @@ run the tests locally:
 git clone https://github.com/happner/wild-pare.git && cd wild-pare && npm install
 
 mocha test
-
 ```
 
 #### performance:
 
-Between 25000 and 40000 wildcard searches in a tree with 300000 subscription nodes in one second. On an i7 macbook pro, with 8GB memory:
+Between 60000 and 90000 wildcard searches in a tree with 300000 subscription nodes in one second. On an i7 macbook pro, with 8GB memory:
 
 ```bash
 //when running mocha test/perf, output
 
-did 300000 wildcard inserts in 4658 milliseconds
-did 30000 wildcard searches in 785 milliseconds, in a tree with += 300000 nodes.
+did 300000 wildcard inserts in 3888 milliseconds
+did 30000 wildcard searches in 374 milliseconds, in a tree with += 300000 nodes.
 
-did 300000 precise inserts in 4040 milliseconds
-did 30000 precise searches in 531 milliseconds, in a tree with += 300000 nodes.
+did 300000 precise inserts in 3663 milliseconds
+did 30000 precise searches in 250 milliseconds, in a tree with += 300000 nodes.
 ```
 
 #### caveats

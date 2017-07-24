@@ -1,7 +1,7 @@
 <span style="font-size:128">&#191;</span> wild-pare
 ----------------
 
-#### *Subscription based in-memory key/value store, optimised for wildcard searches*
+#### *Subscription based in-memory key/value store, optimised for wildcard searches for node v6+*
 
 
 Arbitrary wildcard searches in key/value stores are computationally expensive because of the amount of possible permutations for the wildcard, ie: searching for "/the/*" could return "/the/quick/red/fox" or "/the/slow/brown/cow" or "/the/other" etc. etc.. This issue is compounded when a subscription model is introduced, where the subscriptions are stored wildcard keys. A tree-like structure is essential if we want to avoid full list scans.

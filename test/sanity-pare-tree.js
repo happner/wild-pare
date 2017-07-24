@@ -19,11 +19,11 @@ describe('sanity tests wild pare', function () {
     }
   };
 
-  var SUBSCRIPTION_COUNT = 500;
+  var SUBSCRIPTION_COUNT = 100;
 
   var DUPLICATE_KEYS = 3;
 
-  var CLIENT_COUNT = 10;
+  var CLIENT_COUNT = 5;
 
   it('clearly demonstrates how the tree works, doing an add (precise and wild), remove, search and filter', function (done) {
 
@@ -275,112 +275,9 @@ describe('sanity tests wild pare', function () {
       // console.log(JSON.stringify(queryResultsWildcard, null, 2));
 
       done();
-
   });
 
-  it('sense checks the tree by adding, removing and searching items', function (done) {
-
-    this.timeout(300000);
-
-    var subscriptionTree = new PareTree();
-
-    //add a subscription:
-
-    var subscriptionReference = subscriptionTree.add('/a/precise/subscription', {
-      key: 'subscriber1',
-      data: {some: {custom: "data"}}
-    });
-
-    //query the tree:
-
-    var queryResults = subscriptionTree.search('/a/precise/subscription');//or subscriptionTree.search({path:'/a/precise/subscription'})
-
-    expect(queryResults.length).to.be(1);
-
-    //remove a subscription:
-
-    var removalResult = subscriptionTree.remove(subscriptionReference); // or subscriptionTree.remove({id:subscriptionReference.id}) or subscriptionTree.remove(subscriptionReference.recipient.path)
-
-    //duplicateright wildcard
-    var wildcardSubscriptionReference1 = subscriptionTree.add('/a/wildcard/subscription/*', {
-      key: 'subscriber2',
-      data: {some: {custom: "data"}}
-    });
-
-    var wildcardSubscriptionReference1_same = subscriptionTree.add('/a/wildcard/subscription/*', {
-      key: 'subscriber2',
-      data: {some: {custom: "other-data"}}
-    });
-
-    //a left wildcard
-    var wildcardSubscriptionReference2 = subscriptionTree.add('*/wildcard/subscription/test', {
-      key: 'subscriber2',
-      data: {some: {custom: "data"}}
-    });
-
-    //added duplicate complex wildcards, just different data - anything that is enclosed with 2 * is slow and should be used with care
-    var wildcardSubscriptionReference3 = subscriptionTree.add('*/wildcard*', {
-      key: 'subscriber2',
-      data: {some: {custom: "data"}}
-    });
-    var wildcardSubscriptionReference4 = subscriptionTree.add('*/wildcard*', {
-      key: 'subscriber2',
-      data: {some: {custom: "other-data"}}
-    });
-
-    var wildcardSubscriptionReference5 = subscriptionTree.add('*/wildcard*', {
-      key: 'subscriber3',
-      data: {some: {custom: "data"}}
-    });
-
-    var wildcardSubscriptionReference6 = subscriptionTree.add('*/wildcard*/subscription/*', {
-      key: 'subscriber4',
-      data: {some: {custom: "data"}}
-    });
-
-    //we now search the tree
-    var wildcardSearchResult = subscriptionTree.search('/a/wildcard/subscription/test');
-
-    //we should get 7 results, one for each subscription path (we have 2 path/subscriber pairings on our inserts)
-
-    //some sense checking:
-
-    expect(wildcardSearchResult.length).to.be(7);
-
-    //demonstrates how custom data is managed and accessible in search results
-    expect(wildcardSearchResult[0].data.some.custom).to.be("data");
-    expect(wildcardSearchResult[1].data.some.custom).to.be("other-data");
-
-    //Now lets remove the other subscriptions
-
-    var removalResult1 = subscriptionTree.remove(wildcardSubscriptionReference1);
-
-    var removalResult2 = subscriptionTree.remove(wildcardSubscriptionReference4);
-
-    var removalResult3 = subscriptionTree.remove(wildcardSubscriptionReference5);
-
-    //removalResults return with an array, containing an object/s that has only an id field
-    //we return an array because the removal may have been by path
-    expect(removalResult1[0].id).to.be(wildcardSubscriptionReference1.id);
-    expect(removalResult2[0].id).to.be(wildcardSubscriptionReference4.id);
-    expect(removalResult3[0].id).to.be(wildcardSubscriptionReference5.id);
-
-    //Our list is now pruned:
-
-    wildcardSearchResult = subscriptionTree.search('/a/wildcard/subscription/test');
-
-    //some more sense checking:
-
-    expect(wildcardSearchResult.length).to.be(4);
-
-    expect(wildcardSearchResult[0].data.some.custom).to.be("other-data");
-
-    expect(wildcardSearchResult[1].data.some.custom).to.be("data");
-
-    return done();
-  });
-
-  it('sense checks subscriptions and their attendant queries', function (done) {
+  it('sense checks subscriptions and their attendant queries, by adding searching and removing', function (done) {
 
     this.timeout(300000);
 
@@ -397,6 +294,8 @@ describe('sanity tests wild pare', function () {
     var complexLeftKey = shortid.generate();
 
     var complexRightKey = shortid.generate();
+
+    var complexRightKey1 = shortid.generate();
 
     var multipleRightKey = shortid.generate();
 
@@ -422,11 +321,13 @@ describe('sanity tests wild pare', function () {
 
     subscriptionTree.add('/test/complex/*/short', {key: complexRightKey, data: {test: 5}});
 
+    subscriptionTree.add('/test/complex/*', {key: complexRightKey1, data: {test: 5}});
+
     subscriptionTree.add('test/right/*/short/*/short', {key: multipleRightKey, data: {test: 6}});
 
     subscriptionTree.add('test/right/*/short', {key: multipleRightKey, data: {test: 7}});
 
-    subscriptionTree.add('short/*test/right/*/short', {key: multipleLeftKey, data: {test: 8}});
+    var testRef1 = subscriptionTree.add('short/*test/right/*/short', {key: multipleLeftKey, data: {test: 8}});
 
     subscriptionTree.add('/precise/test', {key: preciseKey, data: {test: 9}});
 
@@ -442,7 +343,7 @@ describe('sanity tests wild pare', function () {
 
     subscriptionTree.add('*/double/left', {key: doubleSubscribeLeftKey, data: {test: 15}});
 
-    subscriptionTree.add('***', {key: allTripleKey, data: {test: 16}});
+    var tripleAddRef = subscriptionTree.add('***', {key: allTripleKey, data: {test: 16}});
 
     subscriptionTree.add('*', {key: allTripleKey, data: {test: 17}});
 
@@ -450,259 +351,60 @@ describe('sanity tests wild pare', function () {
 
     //
     searchResults['a/test/left'] = subscriptionTree.search('a/test/left');
-    searchResults['short/and/test/complex'] = subscriptionTree.search('a/test/left');
-    searchResults['/test/complex/and/short'] = subscriptionTree.search('a/test/left');
-    searchResults['test/right/and/short/and/short'] = subscriptionTree.search('a/test/left');
-    searchResults['short/andtest/right/and/short'] = subscriptionTree.search('a/test/left');
-    searchResults['/precise/test'] = subscriptionTree.search('a/test/left');
-    searchResults['/precise/double'] = subscriptionTree.search('a/test/left');
-    searchResults['double/right/and'] = subscriptionTree.search('a/test/left');
-    searchResults['/precise/double'] = subscriptionTree.search('a/test/left');
-    searchResults['and/double/left'] = subscriptionTree.search('a/test/left');
+    searchResults['short/and/test/complex'] = subscriptionTree.search('short/and/test/complex');
+    searchResults['/test/complex/and/short'] = subscriptionTree.search('/test/complex/and/short');
 
-    //testLog('SANITY 1 RESULTS:::', searchResults);
+    subscriptionTree.remove(tripleAddRef);
+
+    searchResults['test/right/and/short/and/short'] = subscriptionTree.search('test/right/and/short/and/short');
+    searchResults['short/andtest/right/and/short'] = subscriptionTree.search('short/andtest/right/and/short');
+    searchResults['/precise/test'] = subscriptionTree.search('/precise/test');
+    searchResults['/precise/double'] = subscriptionTree.search('/precise/double');
+    searchResults['double/right/and'] = subscriptionTree.search('double/right/and');
+    searchResults['/precise/double'] = subscriptionTree.search('/precise/double');
+    searchResults['and/double/left'] = subscriptionTree.search('and/double/left');
 
     expect(searchResults['a/test/left'].length).to.be(5);
 
     expect(searchResults['a/test/left'][0].data.test).to.be(2);
 
-    return done();
-  });
+    expect(searchResults['short/and/test/complex'].length).to.be(5);
 
-  it.only('sense checks subscriptions and their attendant queries, doing removes', function (done) {
+    expect(searchResults['short/and/test/complex'][0].data.test).to.be(4);
 
-    this.timeout(300000);
+    expect(searchResults['/test/complex/and/short'].length).to.be(6);
 
-    var subscriptionTree = new PareTree();
+    expect(searchResults['/test/complex/and/short'][0].data.test).to.be(5);
 
-    var allKey = shortid.generate();
+    expect(searchResults['/test/complex/and/short'][1].key).to.be(complexRightKey);
 
-    var allTripleKey = shortid.generate();
+    expect(searchResults['test/right/and/short/and/short'].length).to.be(6);
 
-    var leftKey = shortid.generate();
+    expect(searchResults['test/right/and/short/and/short'][1].data.test).to.be(6);
 
-    var rightKey = shortid.generate();
+    //console.log(JSON.stringify(searchResults['short/andtest/right/and/short'], null, 2));
 
-    var complexLeftKey = shortid.generate();
+    expect(searchResults['short/andtest/right/and/short'].length).to.be(4);
 
-    var complexRightKey = shortid.generate();
+    expect(searchResults['short/andtest/right/and/short'][0].data.test).to.be(8);
 
-    var multipleRightKey = shortid.generate();
+    subscriptionTree.remove(testRef1);
 
-    var multipleLeftKey = shortid.generate();
+    expect(subscriptionTree.search('short/andtest/right/and/short').length).to.be(3);
 
-    var preciseKey = shortid.generate();
+    expect(searchResults['/precise/double'].length).to.be(5);
 
-    var doubleSubscribePreciseKey = shortid.generate();
+    subscriptionTree.remove('/precise/double');
 
-    var doubleSubscribeRightKey = shortid.generate();
+    expect(subscriptionTree.search('/precise/double').length).to.be(3);
 
-    var doubleSubscribeLeftKey = shortid.generate();
+    expect(searchResults['double/right/and'].length).to.be(5);
 
-    var searchResultsBefore = [];
-
-    var searchResultsAfter = [];
-    // /test/complex/
-    // double/right/
-    var doubleRightSubscription1 = subscriptionTree.add('double/right/*', {
-      key: doubleSubscribeRightKey,
-      data: {test: 12}
-    });
-
-    var doubleRightSubscription2 = subscriptionTree.add('double/right/*', {
-      key: doubleSubscribeRightKey,
-      data: {test: 13}
-    });
-
-    var allSubscription = subscriptionTree.add('***', {key: allKey, data: {test: 1}});
-
-    var leftSubscription = subscriptionTree.add('*/test/left', {key: leftKey, data: {test: 2}});
-
-    var rightSubscription = subscriptionTree.add('test/right/*', {key: rightKey, data: {test: 3}});
-
-    var complexLeftSubscription = subscriptionTree.add('short/*/test/complex', {key: complexLeftKey, data: {test: 4}});
-
-    var complexRightSubscription = subscriptionTree.add('/test/complex/*/short', {
-      key: complexRightKey,
-      data: {test: 5}
-    });
-
-    var multipleRightSubscription = subscriptionTree.add('test/right/*/short/*/short', {
-      key: multipleRightKey,
-      data: {test: 6}
-    });
-
-    var preciseDoubleSubscription1 = subscriptionTree.add('/precise/double', {
-      key: doubleSubscribePreciseKey,
-      data: {test: 10}
-    });
-
-    var preciseDoubleSubscription2 = subscriptionTree.add('/precise/double', {
-      key: doubleSubscribePreciseKey,
-      data: {test: 11}
-    });
-
-    var doubleLeftSubscription1 = subscriptionTree.add('*/double/left', {
-      key: doubleSubscribeLeftKey,
-      data: {test: 14}
-    });
-
-    var doubleLeftSubscription2 = subscriptionTree.add('*/double/left', {
-      key: doubleSubscribeLeftKey,
-      data: {test: 15}
-    });
-
-    var tripleAllSubscription1 = subscriptionTree.add('***', {key: allTripleKey, data: {test: 16}});
-
-    var tripleAllSubscription2 = subscriptionTree.add('*', {key: allTripleKey, data: {test: 17}});
-
-    var tripleAllSubscription3 = subscriptionTree.add('**', {key: allTripleKey, data: {test: 18}});
-
-    console.log(JSON.stringify(subscriptionTree.search(), null, 2));
-
-    expect( subscriptionTree.search().length).to.be(15);
-
-    searchResultsBefore.push({path: 'a/test/left', results: subscriptionTree.search('a/test/left')});
-
-    expect(searchResultsBefore[searchResultsBefore.length - 1].results.length).to.be(5);
-    //
-    searchResultsBefore.push({path: 'test/right/a', results: subscriptionTree.search('test/right/a')});
-    //
-    searchResultsBefore.push({
-      path: 'short/and/test/complex',
-      results: subscriptionTree.search('short/and/test/complex')
-    });
-    //
-    searchResultsBefore.push({
-      path: '/test/complex/and/short',
-      results: subscriptionTree.search('/test/complex/and/short')
-    });
-    //
-    searchResultsBefore.push({
-      path: 'test/right/and/short/and/short',
-      results: subscriptionTree.search('test/right/and/short/and/short')
-    });
-
-    searchResultsBefore.push({
-      path: 'short/andtest/right/and/short',
-      results: subscriptionTree.search('short/andtest/right/and/short')
-    });
-    //
-    searchResultsBefore.push({path: '/precise/test', results: subscriptionTree.search('/precise/test')});
-    // //
-    searchResultsBefore.push({path: '/precise/double', results: subscriptionTree.search('/precise/double')});
-    // //
-    searchResultsBefore.push({path: 'double/right/and', results: subscriptionTree.search('double/right/and')});
-    // //
-    searchResultsBefore.push({path: '/precise/double', results: subscriptionTree.search('/precise/double')});
-    // //
-    searchResultsBefore.push({path: 'and/double/left', results: subscriptionTree.search('and/double/left')});
-
-    expect(subscriptionTree.search('*').length).to.be(14);
-
-    subscriptionTree.remove(allSubscription);
-
-    expect(subscriptionTree.search('*').length).to.be(13);
-
-    subscriptionTree.remove({id: leftSubscription.id});
-
-    subscriptionTree.remove('double/right/*');
-
-    expect(subscriptionTree.search('*').length).to.be(10);
-
-    var allResults = subscriptionTree.search('*');
-
-    expect(allResults[0].data.test).to.be(4);
-
-    subscriptionTree.remove(tripleAllSubscription2);
-
-    allResults = subscriptionTree.search('*');
-
-    expect(subscriptionTree.search('*').length).to.be(9);
-
-    expect(allResults[0].data.test).to.be(4);
-
-    subscriptionTree.remove('*/test/left');
-
-    subscriptionTree.remove(preciseDoubleSubscription1);
-
-    searchResultsAfter.push({path: 'a/test/left', results: subscriptionTree.search('a/test/left')});
-
-    expect(searchResultsAfter[searchResultsAfter.length - 1].results.length).to.be(2);
-
-    searchResultsAfter.push({path: 'test/right/a', results: subscriptionTree.search('test/right/a')});
-
-    expect(searchResultsAfter[searchResultsAfter.length - 1].results.length).to.be(3);
-
-    searchResultsAfter.push({
-      path: 'short/and/test/complex',
-      results: subscriptionTree.search('short/and/test/complex')
-    });
-    //
-    searchResultsAfter.push({
-      path: '/test/complex/and/short',
-      results: subscriptionTree.search('/test/complex/and/short')
-    });
-    //
-    searchResultsAfter.push({
-      path: 'test/right/and/short/and/short',
-      results: subscriptionTree.search('test/right/and/short/and/short')
-    });
-
-    searchResultsAfter.push({
-      path: 'short/andtest/right/and/short',
-      results: subscriptionTree.search('short/andtest/right/and/short')
-    });
-    //
-    searchResultsAfter.push({path: '/precise/test', results: subscriptionTree.search('/precise/test')});
-    // //
-    searchResultsAfter.push({path: '/precise/double', results: subscriptionTree.search('/precise/double')});
-    // //
-    searchResultsAfter.push({path: 'double/right/and', results: subscriptionTree.search('double/right/and')});
-
-    expect(searchResultsAfter[searchResultsAfter.length - 1].results.length).to.be(2);
-    // //
-    searchResultsAfter.push({path: '/precise/double', results: subscriptionTree.search('/precise/double')});
-    // //
-    searchResultsAfter.push({path: 'and/double/left', results: subscriptionTree.search('and/double/left')});
+    expect(searchResults['double/right/and'][0].data.test).to.be(12);
 
     subscriptionTree.remove('*');
 
     expect(subscriptionTree.search('*').length).to.be(0);
-
-    return done();
-  });
-
-  it('sense checks subscriptions and their attendant queries, removing and adding various subscription types', function (done) {
-
-    this.timeout(300000);
-
-    var subscriptionTree = new PareTree();
-
-    var allKey = shortid.generate();
-
-    var doubleSubscribeRightKey = shortid.generate();
-
-    var allSubscription = subscriptionTree.add('***', {key: allKey, data: {test: 1}});
-
-    var doubleRightSubscription1 = subscriptionTree.add('double/right/*', {
-      key: doubleSubscribeRightKey,
-      data: {test: 12}
-    });
-
-    var doubleRightSubscription2 = subscriptionTree.add('double/right/*', {
-      key: doubleSubscribeRightKey,
-      data: {test: 13}
-    });
-
-    var doubleRightSubscription3 = subscriptionTree.add('*double/left1/', {
-      key: doubleSubscribeRightKey,
-      data: {test: 13}
-    });
-
-    expect( subscriptionTree.search().length).to.be(4);
-
-    expect( subscriptionTree.search('double/left1/').length).to.be(2);
 
     return done();
   });

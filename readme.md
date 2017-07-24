@@ -279,14 +279,14 @@ Between 25000 and 40000 wildcard searches in a tree with 300000 subscription nod
 ```bash
 //when running mocha test/perf, output
 
-did 300000 wildcard inserts in 2744 milliseconds
-did 30000 wildcard searches in 872 milliseconds, in a tree with += 300000 nodes.
+did 300000 wildcard inserts in 4658 milliseconds
+did 30000 wildcard searches in 785 milliseconds, in a tree with += 300000 nodes.
 
-did 300000 precise inserts in 2562 milliseconds
-did 30000 precise searches in 138 milliseconds, in a tree with += 300000 nodes.
+did 300000 precise inserts in 4040 milliseconds
+did 30000 precise searches in 531 milliseconds, in a tree with += 300000 nodes.
 ```
 
 #### caveats
 
 - subscriptions that enclose the path with wildcards, ie \*/a/test/subscription/\* will possibly perform slower, because they are stored and searched through in a different manner and will always involve regex comparisons.
-- although it is very fast, the library is synchronous (blocking) - be aware of this in high-volume environments, I am thinking of an asynch version that stores data on file, making this a database of sorts.
+- although it is very fast, the library is synchronous (blocking) - be aware of this in high-volume environments, I am thinking of an async version that stores data on file, making this a database of sorts.

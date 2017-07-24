@@ -19,25 +19,129 @@ describe('functional tests wild pare', function () {
     }
   };
 
-  // it('tests the permutate function', function (done) {
-  //
-  //   var pareTree = new PareTree();
-  //
-  //   //var mutations = pareTree.__permutate('simon', pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX);
-  //
-  //   pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT] = 1;
-  //   pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT] = 1;
-  //
-  //   var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_LEFT);
-  //
-  //   expect(mutations.length).to.be(23);
-  //
-  //   var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
-  //
-  //   expect(mutations.length).to.be(23);
-  //
-  //   done();
-  // });
+  it('tests wildcard matching', function (done) {
+
+    var pareTree = new PareTree();
+
+    expect(pareTree.__wildcardMatch('/test/complex/*/short','/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/*','/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/*/*/short','/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test*','/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('*/short','/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test*/short','/test/complex/and/short')).to.be(true);
+
+    expect(pareTree.__wildcardMatch('/test/complex/*/short','/test/complex/and/long')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test/complex/*','/blah/complex/and/short')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test/*/*/short','/test/complex/and/long')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test*','/tes/complex/and/short')).to.be(false);
+    expect(pareTree.__wildcardMatch('*/short','/test/complex/and/long')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test*/short','/test/complex/and/short/')).to.be(false);
+
+    done();
+
+  });
+
+  it('tests the sorted object array', function (done) {
+
+    var SortedObjectArray = require("../lib/sorted-array");
+
+    var testSorted = new SortedObjectArray('size');
+
+    var testRandomFirstIndexes = {};
+
+    var index = 0;
+
+    var TESTCOUNT = 20;
+
+    var RANDOM_MAX = 10;
+
+    for (var i = 0; i < TESTCOUNT; i++){
+
+      var last = random.integer(1, RANDOM_MAX);
+
+      for (var ii = 0; ii < last; ii++){
+
+        var randomStrings = random.string({length:20, count:last});
+
+        index++;
+
+        if (ii == 0) testRandomFirstIndexes[i] = last;
+
+        testSorted.insert({size:i, subkey:randomStrings[ii]});
+      }
+    }
+
+    Object.keys(testRandomFirstIndexes).forEach(function(key){
+
+      var searchedItems = testSorted.search(key);
+      expect(searchedItems.length).to.be(testRandomFirstIndexes[key]);
+    });
+
+    var removeAllKey;
+    var removeAtKey;
+    var removeAtSubkey;
+
+    Object.keys(testRandomFirstIndexes).every(function(key){
+
+      var searchedItems = testSorted.search(key);
+
+      if (searchedItems.length > 1 && removeAllKey != null && removeAtKey == null){
+        removeAt = searchedItems[0];
+        removeAtKey = key;
+        removeAtSubkey = searchedItems[0].subkey;
+        return false;
+      }
+      if (searchedItems.length > 1 && removeAllKey == undefined && key != removeAtKey) {
+        removeAllKey = key;
+      }
+      return true;
+    });
+
+
+    var foundAll = testSorted.search(removeAllKey);
+
+    expect(foundAll.length > 0).to.be(true);
+
+    var removeAllResult = testSorted.remove(removeAllKey);
+
+    var foundAll = testSorted.search(removeAllKey);
+
+    expect(foundAll.length).to.be(0);
+
+    var foundAtCount = testSorted.search(removeAtKey).length;
+
+    var removeAtResult = testSorted.remove(removeAtKey, {'subkey':{$eq:removeAtSubkey}});
+
+    var foundAtCountAfterRemove = testSorted.search(removeAtKey).length;
+
+    expect(foundAtCount - 1).to.be(foundAtCountAfterRemove);
+
+    done();
+
+  });
+
+  it('tests the permutate function', function (done) {
+
+    var pareTree = new PareTree();
+
+    //var mutations = pareTree.__permutate('simon', pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX);
+
+    pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT] = 1;
+
+    var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_LEFT);
+
+    expect(mutations.length).to.be(23);
+
+    pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT] = 1;
+
+    pareTree.__upperBounds[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT] = '/a/very/long/path/simon'.length;
+
+    var mutations = pareTree.__permutate('/a/very/long/path/simon', pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
+
+    expect(mutations.length).to.be(23);
+
+    done();
+  });
 
   // it('gets the largest contiguous section', function (done) {
   //
@@ -160,35 +264,6 @@ describe('functional tests wild pare', function () {
     done();
 
   });
-
-  // it('tests adding a subscription id and pushing the path data to an internal index', function(done){
-  //
-  //   var pareTree = new PareTree();
-  //
-  //   var testData = {
-  //     key:'testKey',
-  //     type:pareTree.SEGMENT_TYPE.ALL,
-  //     path:'testPath'
-  //   };
-  //
-  //   var id = pareTree.__createId(testData.key, testData.type, testData.path);
-  //
-  //   var idParts = pareTree.__subscriptionData.search(id)[0];
-  //
-  //   expect(idParts).to.eql(testData);
-  //
-  //   expect(pareTree.__counts[testData.type]).to.be(1);
-  //
-  //   pareTree.__releaseId(id);
-  //
-  //   idParts = pareTree.__subscriptionData.search(id)[0];
-  //
-  //   expect(idParts).to.be(undefined);
-  //
-  //   expect(pareTree.__counts[testData.type]).to.be(0);
-  //
-  //   done();
-  // });
 
   it('adds a left wildcard subscription', function (done) {
 

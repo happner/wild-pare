@@ -3,6 +3,8 @@ var LRU = require("lru-cache")
   , hyperid = require('./lib/id')//require('uniqid')
   , uniqid = new hyperid()
   , sift = require('sift')
+  , SortedObjectArray = require("./lib/sorted-array")
+  , wildcard = require('matcher')
   ;
 
 function PareTree(options) {
@@ -241,11 +243,11 @@ PareTree.prototype.__addSubscription = function (pathInfo, recipient) {
 
   if (branch == null) {
 
-    branch = {recipients: {}, path: pathInfo.segmentPath};
+    branch = {recipients: {}, path: pathInfo.segmentPath, size:pathInfo.segmentPath.length};
 
-    if (!this.__allBranches[pathInfo.type]) this.__allBranches[pathInfo.type] = [];
+    if (!this.__allBranches[pathInfo.type]) this.__allBranches[pathInfo.type] = new SortedObjectArray('size');
 
-    this.__allBranches[pathInfo.type].push(branch);
+    this.__allBranches[pathInfo.type].insert(branch);
 
     segment.branches.insert(pathInfo.segmentPath, branch);
 
@@ -303,8 +305,8 @@ PareTree.prototype.__configureWildcardSegment = function (segment) {
   }
 
   if (segment.pathSegments.length == 2) {
-    if (segment.segmentIndex === 0) segment.type = this.SEGMENT_TYPE.WILDCARD_RIGHT;
-    if (segment.segmentIndex === 1) segment.type = this.SEGMENT_TYPE.WILDCARD_LEFT;
+    if (segment.segmentIndex === 0 && segment.pathSegments[1] == '') segment.type = this.SEGMENT_TYPE.WILDCARD_RIGHT;
+    if (segment.segmentIndex === 1 && segment.pathSegments[0] == '') segment.type = this.SEGMENT_TYPE.WILDCARD_LEFT;
   }
 };
 
@@ -394,15 +396,7 @@ PareTree.prototype.__prune = function (trunk, segment, branch, recipient, subscr
 
     segment.branchCount--;
 
-    var _this = this;
-
-    _this.__allBranches[subscriptionData.type].forEach(function (branch, branchIndex) {
-
-      if (branch.path === subscriptionData.path) {
-
-        _this.__allBranches[subscriptionData.type].splice(branchIndex, 1);
-      }
-    });
+    this.__allBranches[subscriptionData.type].remove(subscriptionData.path.length, {'path':{$eq:subscriptionData.path}});
   }
 
   if (segment.branchCount <= 0) trunk.delete(subscriptionData.path.length);
@@ -517,13 +511,7 @@ PareTree.prototype.__wildcardMatch = function (pattern, matchTo) {
 
   if (matchTo == '*') return true;
 
-  var regex = new RegExp(pattern.replace(/[*]/g, '.*'));
-
-  var matchResult = matchTo.match(regex);
-
-  if (matchResult) return true;
-
-  return false;
+  return wildcard.isMatch(matchTo, pattern);
 };
 
 PareTree.prototype.__decouple = function (results) {
@@ -566,7 +554,7 @@ PareTree.prototype.__appendRecipients = function (searchPath, branch, subscripti
 PareTree.prototype.__iterateAllBranches = function (searchPath, subscriptions, handler, type) {
 
   if (this.__allBranches[type])
-    this.__allBranches[type].forEach(function (branch) {
+    this.__allBranches[type].array(true).forEach(function (branch) {
       handler(searchPath, branch, subscriptions, type);
     });
 };
@@ -617,7 +605,9 @@ PareTree.prototype.__permutate = function (path, type) {
 
   var permPath = path;
 
-  if (this.__counts[type] == 0 || this.__counts[type] == null) return [];//no possible permutations
+  if (this.__counts[type] == 0 || this.__counts[type] == null) {
+   return [];//no possible permutations
+  }
 
   if (type === _this.SEGMENT_TYPE.WILDCARD_RIGHT) {
 
@@ -637,6 +627,7 @@ PareTree.prototype.__permutate = function (path, type) {
       permutations.push(permPath.substring(permPath.length - i));
     }
   }
+
   return permutations;
 };
 
@@ -656,7 +647,6 @@ PareTree.prototype.__iterateWildcard = function (searchPath, subscriptions, hand
   var _this = this;
 
   _this.__permutate(searchPath.path, _this.SEGMENT_TYPE.WILDCARD_RIGHT).forEach(function (path) {
-    //path, branch, subscriptions, handler, type, trunk
     _this.__iterateBranches(path, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT, _this.__trunkWildcardRight);
   });
 
@@ -666,12 +656,15 @@ PareTree.prototype.__iterateWildcard = function (searchPath, subscriptions, hand
 
   if (!_this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]) return;
 
-  _this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX].forEach(function(branch){
+  for (var i = 0; i <= searchPath.path.length; i++){
 
-    if (branch.path.length <= searchPath.path.length){
-      handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
-    }
-  });
+    _this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX].search(i).forEach(function(branch){
+
+      if (branch.path.length <= searchPath.path.length){
+        handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+      }
+    });
+  }
 };
 
 PareTree.prototype.__searchAndAppend = function (searchPath, subscriptions, excludeAll) {
@@ -685,6 +678,8 @@ PareTree.prototype.__searchAndAppend = function (searchPath, subscriptions, excl
     this.__iterateAllBranches(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT);
 
     this.__iterateAllBranches(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT);
+
+    this.__iterateAllBranches(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
 
     this.__iterateAllBranches(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.PRECISE);
 

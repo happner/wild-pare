@@ -1,14 +1,14 @@
 <span style="font-size:128">&#191;</span> wild-pare
 ----------------
 
-#### *Subscription based in-memory key/value store, optimised for wildcard searches for node v6+*
+#### *Subscription based in-memory key/value store, optimised for wildcard searches for nodejs*
 
 
 Arbitrary wildcard searches in key/value stores are computationally expensive because of the amount of possible permutations for the wildcard, ie: searching for "/the/*" could return "/the/quick/red/fox" or "/the/slow/brown/cow" or "/the/other" etc. etc.. This issue is compounded when a subscription model is introduced, where the subscriptions are stored wildcard keys. A tree-like structure is essential if we want to avoid full list scans.
 
 wild-pare is in-memory subscription store that does arbitrary wildcard searches quickly, by implementing [louis's binary search tree](https://github.com/louischatriot/node-binary-search-tree) and branching the data by the key length, branches that are based on key lengths greater than the query segment (be it wildcard or precise), are pared away from the search.
 
-[Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key. Mcollina's [hyperid](https://github.com/mcollina/hyperid) was adapted and included locally - as the unique id generation for creating subscriptions was the biggest performance hurdle.
+[Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key. Mcollina's [hyperid](https://github.com/mcollina/hyperid) was adapted to run on node versions 0.10 - 8 and included locally - as the unique id generation for creating subscriptions was the biggest performance hurdle. Also adapted [matcher](https://github.com/sindresorhus/matcher) to run on node 0.10. To all those people whose libraries I have adapted - thank you.
 
 #### abstract tree structure:
 
@@ -284,6 +284,10 @@ did 30000 wildcard searches in 374 milliseconds, in a tree with += 300000 nodes.
 did 300000 precise inserts in 3663 milliseconds
 did 30000 precise searches in 250 milliseconds, in a tree with += 300000 nodes.
 ```
+
+#### supported node versions:
+
+v0.10 - v8
 
 #### caveats
 

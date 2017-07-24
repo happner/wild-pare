@@ -1,22 +1,22 @@
 {
   "name": "wild-pare",
-  "version": "3.0.0",
+  "version": "3.3.0",
   "scripts": {
     "test": "mocha test"
   },
   "devDependencies": {
-    "assert": "^1.4.0",
-    "chai": "^3.5.0",
-    "expect.js": "^0.3.1",
-    "mocha": "*",
+    "assert": "1.4.0",
+    "chai": "3.5.0",
+    "expect.js": "0.3.1",
+    "mocha": "^3.4.2",
     "shortid": "2.2.4"
   },
   "dependencies": {
-    "async": "^2.5.0",
+    "async": "2.5.0",
     "binary-search-tree": "0.2.6",
     "bluebird": "2.10.2",
+    "es6-map": "0.1.5",
     "lru-cache": "4.1.1",
-    "matcher": "^1.0.0",
     "sift": "3.3.12",
     "sorted-object-array": "1.0.0",
     "uuid": "2.0.2"

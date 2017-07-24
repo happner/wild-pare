@@ -368,6 +368,8 @@ describe('sanity tests wild pare', function () {
 
     expect(searchResults['a/test/left'][0].data.test).to.be(2);
 
+    //console.log(JSON.stringify(searchResults['short/and/test/complex'], null, 2));
+
     expect(searchResults['short/and/test/complex'].length).to.be(5);
 
     expect(searchResults['short/and/test/complex'][0].data.test).to.be(4);

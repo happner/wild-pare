@@ -4,7 +4,7 @@ var LRU = require("lru-cache")
   , uniqid = new hyperid()
   , sift = require('sift')
   , SortedObjectArray = require("./lib/sorted-array")
-  , wildcard = require('matcher')
+  , wildcard = require('./lib/wildcard')
   ;
 
 function PareTree(options) {

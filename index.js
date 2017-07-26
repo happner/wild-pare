@@ -5,6 +5,8 @@ var LRU = require("lru-cache")
   , sift = require('sift')
   , SortedObjectArray = require("./lib/sorted-array")
   , wildcard = require('./lib/wildcard')
+  , intersect = require('./lib/intersect')
+  , fuzz = require('fuzzball')
   ;
 
 function PareTree(options) {
@@ -511,7 +513,7 @@ PareTree.prototype.__wildcardMatch = function (pattern, matchTo) {
 
   if (matchTo == '*') return true;
 
-  return wildcard.isMatch(matchTo, pattern);
+  return wildcard.matches(matchTo, pattern);
 };
 
 PareTree.prototype.__decouple = function (results) {
@@ -667,13 +669,170 @@ PareTree.prototype.__iterateWildcard = function (searchPath, subscriptions, hand
   }
 };
 
+PareTree.prototype.__wildcardSplit = function(path){
+
+  var split = path.split('*');
+  var segments = [];
+
+  split.map(function(segment, ind){
+    if (segment != '') segments.push(segment)
+    if (ind < split.length - 1 || segment == '') segments.push('*');
+  });
+
+  return segments;
+};
+
+PareTree.prototype.__wildcardSearchMatch = function (searchPath, branchPath) {
+
+  var _this = this;
+
+  //one is * or ** or *** etc
+  if (searchPath.replace(/[*]/g, '') == '' || branchPath.replace(/[*]/g, '') == '') return true;
+
+  var vertical = (searchPath.length >= branchPath.length?searchPath:branchPath).split('');
+
+  var horizontal = (searchPath.length < branchPath.length?searchPath:branchPath).split('');
+
+  var matrix = [];
+
+  // console.log(long.split('').join(' '));
+  // console.log(short.split('').join(' '));
+
+  vertical.forEach(function(verticalChar){
+
+    horizontal.forEach(function(horizontalChar, horizontalIndex){
+
+      if (!matrix[horizontalIndex]) matrix[horizontalIndex] = [];
+
+      if (horizontalChar == verticalChar || horizontalChar == '*' || verticalChar == '*') matrix[horizontalIndex].push(horizontalChar);
+
+      else  matrix[horizontalIndex].push(0);
+    });
+  });
+
+  //console.log(matrix[0].join(' '));
+
+  // matrix.forEach(function(horizontal){
+  //   console.log(horizontal.join(' '));
+  // });
+
+  //console.log('given header:::', matrix[0].join(' '));
+
+  var matched = false;
+
+  for (var i = 0;i < matrix[0].length;i++){
+
+    if (matrix[0][i] != 0){
+      // console.log('with x:' + i + ' equal to: ' + matrix[0][i]);
+      // console.log('we loop through x and y adding 1 each time');
+      var x = i;
+
+      var total = 1;
+
+      for (var y = 1;y < horizontal.length;y++){
+
+        x++;
+
+        if (!matrix[y][x]) break;
+        // console.log('we have x + 1 and y + 1 equal to: ', x, y, 'respectively');
+        // console.log('this equals on our matrix: ', matrix[y][x]);
+        total++;
+        //console.log('total is: ', total, ' out of ', horizontal.length);
+
+        if (total == horizontal.length){
+          matched = true;
+          break;
+        }
+      }
+      if (matched) break;
+    }
+  }
+
+  return matched;
+};
+
+PareTree.prototype.__iterateWildcardSearch = function (searchPath, subscriptions, handler, type) {
+
+  var _this = this;
+
+  // */test/path /test/path* *est/path  /test/path* *st/path /test/pa*
+
+  if (!_this.__allBranches[type]) return;
+
+  _this.__allBranches[type].array().forEach(function(branch){
+
+    if (_this.__wildcardSearchMatch(searchPath.path, branch.path)) handler(searchPath, branch, subscriptions, type);
+  });
+};
+
+// PareTree.prototype.__iterateWildcardSearchComplex = function (searchPath, subscriptions, handler) {
+//
+//   var _this = this;
+//
+//   // */test/path */test*/path* *est/path  /test/path* *st/path /test/pa*
+//
+//   if (!_this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]) return;
+//
+//   if (searchPath.type == _this.SEGMENT_TYPE.WILDCARD_COMPLEX){
+//
+//     _this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX].array().forEach(function(branch){
+//       if (branch.path.indexOf(searchPath.path) > -1) handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+//     });
+//   } else {
+//
+//     _this.__permutate(searchPath.path, type).forEach(function (mutated) {
+//
+//       for (var i = _this.__lowerBounds[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]; i <= _this.__upperBounds[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]; i++) {
+//
+//         _this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX].search(i).forEach(function(branch){
+//
+//           handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+//         });
+//       }
+//     });
+//   }
+// };
+
+PareTree.prototype.__iterateWildcardSearchPrecise = function (searchPath, subscriptions, handler) {
+
+  var _this = this;
+
+  // */test/path /test/path* *est/path  /test/path* *st/path /test/pa*
+
+  if (!_this.__allBranches[_this.SEGMENT_TYPE.PRECISE]) return;
+
+  for (var i = _this.__lowerBounds[_this.SEGMENT_TYPE.PRECISE]; i <= _this.__upperBounds[_this.SEGMENT_TYPE.PRECISE]; i++){
+
+    _this.__allBranches[_this.SEGMENT_TYPE.PRECISE].search(i).forEach(function(branch){
+
+      if (branch.path.indexOf(searchPath.path) > -1) handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+    });
+  }
+};
+
+PareTree.prototype.__wildcardSearchAndAppend = function (searchPath, subscriptions, excludeAll) {
+
+  var _this = this;
+
+  var handler = _this.__appendRecipients.bind(_this);
+
+  _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT);
+  _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT);
+  _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+  //_this.__iterateWildcardSearchComplex(searchPath, subscriptions, handler);
+  _this.__iterateWildcardSearchPrecise(searchPath, subscriptions, handler);
+
+
+  if (!excludeAll) this.__iterateAll(searchPath, subscriptions, handler);
+};
+
 PareTree.prototype.__searchAndAppend = function (searchPath, subscriptions, excludeAll) {
 
   var _this = this;
 
   var handler = _this.__appendRecipients.bind(_this);
 
-  if (searchPath.path == '*') {
+  if (searchPath.path === '*') {
 
     this.__iterateAllBranches(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT);
 
@@ -723,7 +882,12 @@ PareTree.prototype.search = function (path, options) {
 
   var searchPath = this.__segmentPath(path);
 
-  this.__searchAndAppend(searchPath, subscriptions, options ? options.excludeAll : false);
+  if ([this.SEGMENT_TYPE.WILDCARD_LEFT,
+       this.SEGMENT_TYPE.WILDCARD_RIGHT,
+       this.SEGMENT_TYPE.WILDCARD_COMPLEX].indexOf(searchPath.type) > -1)
+    this.__wildcardSearchAndAppend(searchPath, subscriptions, options ? options.excludeAll : false);
+  else
+    this.__searchAndAppend(searchPath, subscriptions, options ? options.excludeAll : false);
 
   if (options.filter != null) subscriptions = sift(options.filter, subscriptions);
 

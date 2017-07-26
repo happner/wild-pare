@@ -16,6 +16,7 @@
     "binary-search-tree": "0.2.6",
     "bluebird": "2.10.2",
     "es6-map": "0.1.5",
+    "fuzzball": "^0.12.3",
     "lru-cache": "4.1.1",
     "sift": "3.3.12",
     "sorted-object-array": "1.0.0",

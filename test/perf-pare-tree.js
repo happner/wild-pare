@@ -120,6 +120,62 @@ describe('performance tests wild pare', function () {
   });
 
 
+  var W_SUBSCRIPTION_COUNT = 10000;
+
+  it('tests the wildcard search matching, wildcard', function(done){
+
+    var pareTree = new PareTree();
+
+    var subscriptions = random.randomPaths({count:W_SUBSCRIPTION_COUNT});
+
+    var wildcards = subscriptions.map(function(subscription){
+      return  subscription.substring(0, random.integer(0, subscription.length - 1))  + '*';
+    });
+
+    var started = Date.now();
+
+    subscriptions.every(function(subscription, subscriptionIndex){
+      if (!pareTree.__wildcardSearchMatch(wildcards[subscriptionIndex], subscription)){
+        done(new Error('expected a true'));
+        return false;
+      }
+      return true;
+    });
+
+    var completed = Date.now() - started;
+
+    console.log('milliseconds:::', completed);
+
+    done();
+  });
+
+  it('tests the search matching, non-wildcard', function(done){
+
+    var pareTree = new PareTree();
+
+    var subscriptions = random.randomPaths({count:W_SUBSCRIPTION_COUNT});
+
+    var wildcards = subscriptions.map(function(subscription){
+      return  subscription.substring(0, random.integer(0, subscription.length - 1))  + '*';
+    });
+
+    var started = Date.now();
+
+    subscriptions.every(function(subscription, subscriptionIndex){
+      if (!pareTree.__wildcardMatch(wildcards[subscriptionIndex], subscription)){
+        done(new Error('expected a true'));
+        return false;
+      }
+      return true;
+    });
+
+    var completed = Date.now() - started;
+
+    console.log('milliseconds:::', completed);
+
+    done();
+  });
+
   var N_SUBSCRIPTION_COUNT = 10000;
 
   var SEARCHES = 100;

@@ -509,11 +509,9 @@ PareTree.prototype.remove = function (options) {
   return removedFiltered;
 };
 
-PareTree.prototype.__wildcardMatch = function (pattern, matchTo) {
+PareTree.prototype.__wildcardMatch = function (path1, path2) {
 
-  if (matchTo == '*') return true;
-
-  return wildcard.matches(matchTo, pattern);
+  return wildcard.matches(path1, path2);
 };
 
 PareTree.prototype.__decouple = function (results) {
@@ -669,88 +667,6 @@ PareTree.prototype.__iterateWildcard = function (searchPath, subscriptions, hand
   }
 };
 
-PareTree.prototype.__wildcardSplit = function(path){
-
-  var split = path.split('*');
-  var segments = [];
-
-  split.map(function(segment, ind){
-    if (segment != '') segments.push(segment)
-    if (ind < split.length - 1 || segment == '') segments.push('*');
-  });
-
-  return segments;
-};
-
-PareTree.prototype.__wildcardSearchMatch = function (searchPath, branchPath) {
-
-  var _this = this;
-
-  //one is * or ** or *** etc
-  if (searchPath.replace(/[*]/g, '') == '' || branchPath.replace(/[*]/g, '') == '') return true;
-
-  var vertical = (searchPath.length >= branchPath.length?searchPath:branchPath).split('');
-
-  var horizontal = (searchPath.length < branchPath.length?searchPath:branchPath).split('');
-
-  var matrix = [];
-
-  // console.log(long.split('').join(' '));
-  // console.log(short.split('').join(' '));
-
-  vertical.forEach(function(verticalChar){
-
-    horizontal.forEach(function(horizontalChar, horizontalIndex){
-
-      if (!matrix[horizontalIndex]) matrix[horizontalIndex] = [];
-
-      if (horizontalChar == verticalChar || horizontalChar == '*' || verticalChar == '*') matrix[horizontalIndex].push(horizontalChar);
-
-      else  matrix[horizontalIndex].push(0);
-    });
-  });
-
-  //console.log(matrix[0].join(' '));
-
-  // matrix.forEach(function(horizontal){
-  //   console.log(horizontal.join(' '));
-  // });
-
-  //console.log('given header:::', matrix[0].join(' '));
-
-  var matched = false;
-
-  for (var i = 0;i < matrix[0].length;i++){
-
-    if (matrix[0][i] != 0){
-      // console.log('with x:' + i + ' equal to: ' + matrix[0][i]);
-      // console.log('we loop through x and y adding 1 each time');
-      var x = i;
-
-      var total = 1;
-
-      for (var y = 1;y < horizontal.length;y++){
-
-        x++;
-
-        if (!matrix[y][x]) break;
-        // console.log('we have x + 1 and y + 1 equal to: ', x, y, 'respectively');
-        // console.log('this equals on our matrix: ', matrix[y][x]);
-        total++;
-        //console.log('total is: ', total, ' out of ', horizontal.length);
-
-        if (total == horizontal.length){
-          matched = true;
-          break;
-        }
-      }
-      if (matched) break;
-    }
-  }
-
-  return matched;
-};
-
 PareTree.prototype.__iterateWildcardSearch = function (searchPath, subscriptions, handler, type) {
 
   var _this = this;
@@ -761,37 +677,9 @@ PareTree.prototype.__iterateWildcardSearch = function (searchPath, subscriptions
 
   _this.__allBranches[type].array().forEach(function(branch){
 
-    if (_this.__wildcardSearchMatch(searchPath.path, branch.path)) handler(searchPath, branch, subscriptions, type);
+    if (_this.__wildcardMatch(searchPath.path, branch.path)) handler(searchPath, branch, subscriptions, type);
   });
 };
-
-// PareTree.prototype.__iterateWildcardSearchComplex = function (searchPath, subscriptions, handler) {
-//
-//   var _this = this;
-//
-//   // */test/path */test*/path* *est/path  /test/path* *st/path /test/pa*
-//
-//   if (!_this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]) return;
-//
-//   if (searchPath.type == _this.SEGMENT_TYPE.WILDCARD_COMPLEX){
-//
-//     _this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX].array().forEach(function(branch){
-//       if (branch.path.indexOf(searchPath.path) > -1) handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
-//     });
-//   } else {
-//
-//     _this.__permutate(searchPath.path, type).forEach(function (mutated) {
-//
-//       for (var i = _this.__lowerBounds[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]; i <= _this.__upperBounds[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]; i++) {
-//
-//         _this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX].search(i).forEach(function(branch){
-//
-//           handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
-//         });
-//       }
-//     });
-//   }
-// };
 
 PareTree.prototype.__iterateWildcardSearchPrecise = function (searchPath, subscriptions, handler) {
 

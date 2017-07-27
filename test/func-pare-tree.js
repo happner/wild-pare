@@ -480,9 +480,9 @@ describe('functional tests wild pare', function () {
     done();
   });
 
-  xit('tests the wildcard search matching, where * is nothing', function(done){
+  it('tests the wildcard search matching, where * is nothing', function(done){
     var pareTree = new PareTree();
-    expect(pareTree.__wildcardSearchMatch('*test/mat', '*te*st*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*te*st/mat', '*te*st*')).to.be(true);
     done();
   });
 
@@ -498,62 +498,62 @@ describe('functional tests wild pare', function () {
     //
     // expect(pareTree.__wildcardSearchMatch('*te*s*t*', '*test/mat')).to.be(true);
 
-    console.log('starting:::');
+    expect(pareTree.__wildcardMatch('*e*ma*', '*test/mat')).to.be(true);//false
 
-    expect(pareTree.__wildcardSearchMatch('*ing', 'test/long string*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*i*g1', '*str*ing*')).to.be(true);
 
-    expect(pareTree.__wildcardSearchMatch('test/lo*', 'test/long string*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*ing1', '*ring*')).to.be(true);
 
-    expect(pareTree.__wildcardSearchMatch('*/test/match', '*st*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*ing', 'test/long string*')).to.be(true);
+
+    expect(pareTree.__wildcardMatch('test/long string*', '*st*ing')).to.be(true);
+
+    expect(pareTree.__wildcardMatch('test/lo*', 'test/long string*')).to.be(true);
+
+    expect(pareTree.__wildcardMatch('*/test/match', '*st*')).to.be(true);
 
     //left left
-    expect(pareTree.__wildcardSearchMatch('*/test/match', '*st/match')).to.be(true);
+    expect(pareTree.__wildcardMatch('*/test/match', '*st/match')).to.be(true);
 
     //right right
-    expect(pareTree.__wildcardSearchMatch('/test/match*', '/test/match/*')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/match*', '/test/match/*')).to.be(true);
 
-    expect(pareTree.__wildcardSearchMatch('/test/ma*', '*tes*/ma*')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/ma*', '*tes*/ma*')).to.be(true);
 
-    expect(pareTree.__wildcardSearchMatch('*test/match', '/test/mat*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*test/match', '/test/mat*')).to.be(true);
 
-    expect(pareTree.__wildcardSearchMatch('/test/match*', '/blah/match/*')).to.be(false);//false
+    expect(pareTree.__wildcardMatch('/test/match*', '/blah/match/*')).to.be(false);//false
 
     //right left
-    expect(pareTree.__wildcardSearchMatch('/test/mat*', '*test/match')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/mat*', '*test/match')).to.be(true);
 
     //precise left
-    expect(pareTree.__wildcardSearchMatch('*test/match', '/test/match')).to.be(true);
+    expect(pareTree.__wildcardMatch('*test/match', '/test/match')).to.be(true);
 
     //precise right
-    expect(pareTree.__wildcardSearchMatch('/test/mat*', '/test/match')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/mat*', '/test/match')).to.be(true);
 
     //left left
-    expect(pareTree.__wildcardSearchMatch('*/test/match', '*st/blah')).to.be(false);//false
+    expect(pareTree.__wildcardMatch('*/test/match', '*st/blah')).to.be(false);//false
 
     //left right
-    expect(pareTree.__wildcardSearchMatch('*test/match', '/test/mar*')).to.be(false);//false
+    expect(pareTree.__wildcardMatch('*test/match', '/test/mar*')).to.be(false);//false
 
     //right left
-    expect(pareTree.__wildcardSearchMatch('/test/mat*', '*test/march')).to.be(false);//false
+    expect(pareTree.__wildcardMatch('/test/mat*', '*test/march')).to.be(false);//false
 
     //precise left
-    expect(pareTree.__wildcardSearchMatch('*test/match', '/test/march')).to.be(false);//false
+    expect(pareTree.__wildcardMatch('*test/match', '/test/ma*rch')).to.be(false);//false
 
     //precise right
-    expect(pareTree.__wildcardSearchMatch('/test/mat*', '/test/march')).to.be(false);//false
+    expect(pareTree.__wildcardMatch('/test/mat*', '*test/march')).to.be(false);//false
 
-    expect(pareTree.__wildcardSearchMatch('*test/mat', '*pe*st*')).to.be(false);//false
-
-
+    expect(pareTree.__wildcardMatch('*test/mat', '*pe*st*')).to.be(false);//false
 
     return done();
-
-    //complex left
-
-    done();
   });
 
-  it('tests doing a wildcard search, left left', function(){
+  it('tests doing a wildcard search, left left', function(done){
 
     //we create a bunch of subscriptions, then search using a wildcard
     //NB - this functionality makes permissions, and deep searching possible, ie: /wild/* and /wild/card/* in /wi*
@@ -598,7 +598,6 @@ describe('functional tests wild pare', function () {
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(0);
 
     done();
-
   });
 
 });

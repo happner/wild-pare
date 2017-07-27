@@ -122,20 +122,24 @@ describe('performance tests wild pare', function () {
 
   var W_SUBSCRIPTION_COUNT = 10000;
 
-  it('tests the wildcard search matching, wildcard', function(done){
+  it('tests the wildcard search matching, wildcard on both paths', function(done){
 
     var pareTree = new PareTree();
 
     var subscriptions = random.randomPaths({count:W_SUBSCRIPTION_COUNT});
 
-    var wildcards = subscriptions.map(function(subscription){
+    var wildcardPaths1 = subscriptions.map(function(subscription){
       return  subscription.substring(0, random.integer(0, subscription.length - 1))  + '*';
+    });
+
+    var wildcardPaths2 = wildcardPaths1.map(function(subscription){
+      return  '*' + subscription.substring(random.integer(1, subscription.length - 1), subscription.length - 2);
     });
 
     var started = Date.now();
 
     subscriptions.every(function(subscription, subscriptionIndex){
-      if (!pareTree.__wildcardSearchMatch(wildcards[subscriptionIndex], subscription)){
+      if (!pareTree.__wildcardMatch(wildcardPaths1[subscriptionIndex], wildcardPaths2[subscriptionIndex])){
         done(new Error('expected a true'));
         return false;
       }
@@ -149,7 +153,7 @@ describe('performance tests wild pare', function () {
     done();
   });
 
-  it('tests the search matching, non-wildcard', function(done){
+  it('tests the search matching, wildcard on one path', function(done){
 
     var pareTree = new PareTree();
 
@@ -178,11 +182,58 @@ describe('performance tests wild pare', function () {
 
   var N_SUBSCRIPTION_COUNT = 10000;
 
-  var SEARCHES = 100;
+  var SEARCHES = 10;
 
-  it('searches N subscriptions ', function (done) {
+  it('searches ' + N_SUBSCRIPTION_COUNT + ' subscriptions,' + SEARCHES + ' times, no wildcard in search path', function (done) {
 
-    this.timeout(10000);
+    this.timeout(60000);
+
+    var subscriptions = random.randomPaths({duplicate:DUPLICATE_KEYS, count:N_SUBSCRIPTION_COUNT});
+
+    var clients = random.string({count:CLIENT_COUNT});
+
+    var subscriptionTree = new PareTree();
+
+    var subscriptionResults = {};
+
+    subscriptions.forEach(function(subscriptionPath){
+
+      clients.forEach(function(sessionId){
+
+        subscriptionTree.add(subscriptionPath.substring(0, subscriptionPath.length - 1) + '*', {key:sessionId, data:{test:"data"}});
+
+        if (!subscriptionResults[sessionId]) subscriptionResults[sessionId] = {paths:{}};
+
+        subscriptionResults[sessionId].paths[subscriptionPath] = true;
+      });
+    });
+
+    var startedSearches = Date.now();
+
+    var searched = 0;
+
+    subscriptions.every(function(subscriptionPath){
+
+      searched++;
+
+      subscriptionTree.search(subscriptionPath);
+
+      if (searched == SEARCHES) return false;
+
+      return true;
+    });
+
+    var endedSearches = Date.now();
+
+    testLog('searched through ' + N_SUBSCRIPTION_COUNT * CLIENT_COUNT + ' subscriptions ' + SEARCHES + ' times, in ' + (endedSearches - startedSearches) + ' milliseconds');
+
+    return done();
+
+  })
+
+  it('searches ' + N_SUBSCRIPTION_COUNT + ' subscriptions,' + SEARCHES + ' times, wildcard in search path', function (done) {
+
+    this.timeout(60000);
 
     var subscriptions = random.randomPaths({duplicate:DUPLICATE_KEYS, count:N_SUBSCRIPTION_COUNT});
 
@@ -207,8 +258,6 @@ describe('performance tests wild pare', function () {
     var startedSearches = Date.now();
 
     var searched = 0;
-
-    console.log('searching subs:::');
 
     subscriptions.every(function(subscriptionPath){
 

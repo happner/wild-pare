@@ -1,12 +1,10 @@
 var LRU = require("lru-cache")
   , BinarySearchTree = require('binary-search-tree').BinarySearchTree
-  , hyperid = require('./lib/id')//require('uniqid')
+  , hyperid = require('./lib/id')
   , uniqid = new hyperid()
   , sift = require('sift')
   , SortedObjectArray = require("./lib/sorted-array")
-  , wildcard = require('./lib/wildcard')
-  , intersect = require('./lib/intersect')
-  , fuzz = require('fuzzball')
+  , Comedian = require('co-median')
   ;
 
 function PareTree(options) {
@@ -14,6 +12,8 @@ function PareTree(options) {
   this.options = options ? options : {};
 
   if (!this.options.cache) this.options.cache = {max: 10000};
+
+  if (!this.options.wildcardCache) this.options.wildcardCache = {cache:1000};
 
   this.__cache = new LRU(this.options.cache);
 
@@ -52,6 +52,8 @@ PareTree.prototype.__initialize = function () {
   this.__upperBounds = {};
 
   this.__lowerBounds = {};
+
+  this.__comedian = new Comedian(this.options.wildcardCache);
 
   this.__analytics = {
     started: {},
@@ -511,7 +513,7 @@ PareTree.prototype.remove = function (options) {
 
 PareTree.prototype.__wildcardMatch = function (path1, path2) {
 
-  return wildcard.matches(path1, path2);
+  return this.__comedian.matches(path1, path2);
 };
 
 PareTree.prototype.__decouple = function (results) {
@@ -522,13 +524,13 @@ PareTree.prototype.__decouple = function (results) {
   });
 };
 
-PareTree.prototype.__appendQueryRecipient = function (recipient, searchPath, appendTo, type) {
+PareTree.prototype.__appendQueryRecipient = function (recipient, searchPath, appendTo, type, wildcard) {
 
   var _this = this;
 
   return recipient.subscriptions.map(function (subscription) {
 
-    if (type === _this.SEGMENT_TYPE.WILDCARD_COMPLEX && !_this.__wildcardMatch(subscription.path, searchPath)) return;
+    if ((type === _this.SEGMENT_TYPE.WILDCARD_COMPLEX || wildcard) && !_this.__comedian.matches(subscription.path, searchPath)) return;
 
     appendTo.push({
       key: recipient.key,
@@ -539,7 +541,7 @@ PareTree.prototype.__appendQueryRecipient = function (recipient, searchPath, app
   });
 };
 
-PareTree.prototype.__appendRecipients = function (searchPath, branch, subscriptions, type) {
+PareTree.prototype.__appendRecipients = function (searchPath, branch, subscriptions, type, wildcard) {
 
   var _this = this;
 
@@ -547,7 +549,7 @@ PareTree.prototype.__appendRecipients = function (searchPath, branch, subscripti
 
     var recipient = branch.recipients[recipientKey];
 
-    _this.__appendQueryRecipient(recipient, searchPath.path, subscriptions, type);
+    _this.__appendQueryRecipient(recipient, searchPath.path, subscriptions, type, wildcard);
   });
 };
 
@@ -670,14 +672,11 @@ PareTree.prototype.__iterateWildcard = function (searchPath, subscriptions, hand
 PareTree.prototype.__iterateWildcardSearch = function (searchPath, subscriptions, handler, type) {
 
   var _this = this;
-
-  // */test/path /test/path* *est/path  /test/path* *st/path /test/pa*
-
+  
   if (!_this.__allBranches[type]) return;
 
   _this.__allBranches[type].array().forEach(function(branch){
-
-    if (_this.__wildcardMatch(searchPath.path, branch.path)) handler(searchPath, branch, subscriptions, type);
+    handler(searchPath, branch, subscriptions, type, true);
   });
 };
 

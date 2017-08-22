@@ -633,6 +633,100 @@ describe('functional tests wild pare', function () {
 
     var recipients = [];
 
+    var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/complex/is');
+
+    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(0);
+
+    done();
+  });
+
+  it('tests doing a wildcard search, left left', function(done){
+
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('*/a/wildcard/left');
+
+    var recipient = 'test-wildcard-left-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
+
+    var recipients = [];
+
+    var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/left');
+
+    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(0);
+
+    done();
+  });
+
+  it('tests doing a wildcard search, left right', function(done){
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('/a/wildcard/right/*');
+
+    var recipient = 'test-wildcard-left-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
+
+    var recipients = [];
+
+    var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/right/');
+
+    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(0);
+
+    done();
+  });
+
+  it('tests doing a wildcard search, left complex', function(done){
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('*/wildcard*complex/*');
+
+    var recipient = 'test-wildcard-left-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
+
+    var recipients = [];
+
     var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/complex*');
 
     pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
@@ -650,4 +744,130 @@ describe('functional tests wild pare', function () {
     done();
   });
 
+  it('tests doing a wildcard search, right right', function(done){
+
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('/a/wildcard/right/*');
+
+    var recipient = 'test-wildcard-left-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
+
+    var recipients = [];
+
+    var segmentedSearchPath = pareTree.__segmentPath('/a/wildcard/right*');
+
+    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(0);
+
+    done();
+  });
+
+  it('tests doing a wildcard search, right left', function(done){
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('*/wildcard/right/');
+
+    var recipient = 'test-wildcard-left-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
+
+    var recipients = [];
+
+    var segmentedSearchPath = pareTree.__segmentPath('wildcard/right*');
+
+    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(0);
+
+    done();
+  });
+
+  it('tests doing a wildcard search, right complex', function(done){
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('*/wildcard*complex/*');
+
+    var recipient = 'test-wildcard-left-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
+
+    var recipients = [];
+
+    var segmentedSearchPath = pareTree.__segmentPath('a/wildcard/complex*');
+
+    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(0);
+
+    done();
+
+  });
+
+  it('tests doing a wildcard search, complex complex', function(done){
+
+    var pareTree = new PareTree();
+
+    var segmented = pareTree.__segmentPath('*/wildcard*complex/*');
+
+    var recipient = 'test-wildcard-left-recipient';
+
+    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
+
+    var recipients = [];
+
+    var segmentedSearchPath = pareTree.__segmentPath('*/*/co*mplex*');
+
+    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+
+    expect(recipients.length).to.be(1);
+
+    expect(recipients[0].data).to.be('test');
+
+    var removeReference = pareTree.__removeSpecific(subscriptionReference);
+
+    expect(removeReference.id).to.be(subscriptionReference.id);
+
+    expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(0);
+
+    done();
+
+  });
 });

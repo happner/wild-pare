@@ -464,20 +464,17 @@ PareTree.prototype.__removeSpecific = function (options) {
   return _this.__removeWildcardSubscriptionEntry(subscriptionData, trunk, options.id);
 };
 
-PareTree.prototype.__removeByPath = function (path) {
+PareTree.prototype.__removeByPath = function (options) {
 
   var _this = this;
 
   var removed = [];
 
-  //remove all if no options or remove('*') or remove('') or remove('***')
-  if (!path || path.replace(/[*]/g, '') == '') {
-    this.__initialize();//resets the tree
-    return [];
-  }
+  //we exclude * subscriptions if we are removing by a disticnt path, ie: /a/distinct/path/*
+  if (options.path.replace(/[*]/g, '') != '') options.excludeAll = true;
 
   //loop through them removing each specific one
-  _this.search(path, {excludeAll: true}).forEach(function (subscriptionEntry) {
+  _this.search(options).forEach(function (subscriptionEntry) {
 
     var removedResult = _this.__removeSpecific({
       id: subscriptionEntry.id
@@ -491,24 +488,21 @@ PareTree.prototype.__removeByPath = function (path) {
 
 PareTree.prototype.remove = function (options) {
 
-  var removed;
+  var removed = [];
 
-  if (!options || options.substring) removed = this.__removeByPath(options);
+  if (!options || options.substring) removed = this.__removeByPath({path:options});
 
-  else if (options.id) removed = [this.__removeSpecific(options)];
+  else if (options.id) {
 
-  else if (options.path)
-    removed = this.__removeByPath(options.path ? options.path : options.recipient ? options.recipient.path : options);
+    var specific = this.__removeSpecific(options);
+    if (specific != null) removed = [specific];
+  }
+
+  else if (options.path) removed = this.__removeByPath(options);
 
   else throw new Error('invalid remove options: ' + JSON.stringify(options));
 
-  var removedFiltered = [];//cannot use array.filter because it is ECMA6
-
-  removed.map(function (removedItem) {
-    if (removedItem != null) removedFiltered.push(removedItem);
-  });
-
-  return removedFiltered;
+  return removed;
 };
 
 PareTree.prototype.__wildcardMatch = function (path1, path2) {

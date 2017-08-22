@@ -1,6 +1,6 @@
 {
   "name": "wild-pare",
-  "version": "3.5.0",
+  "version": "3.5.1",
   "scripts": {
     "test": "mocha test"
   },
@@ -15,7 +15,7 @@
     "async": "2.5.0",
     "binary-search-tree": "0.2.6",
     "bluebird": "2.10.2",
-    "co-median": "1.1.1",
+    "co-median": "1.1.3",
     "lru-cache": "4.1.1",
     "sift": "3.3.12",
     "sorted-object-array": "1.0.0",

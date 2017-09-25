@@ -1,4 +1,4 @@
-describe('sanity tests wild pare', function () {
+describe('wild-pare-sanity', function () {
 
   this.timeout(5000);
 

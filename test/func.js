@@ -1,4 +1,4 @@
-describe('functional tests wild pare', function () {
+describe('wild-pare-func', function () {
 
   this.timeout(5000);
 
@@ -29,32 +29,20 @@ describe('functional tests wild pare', function () {
     expect(pareTree.__wildcardMatch('/test*','/test/complex/and/short')).to.be(true);
     expect(pareTree.__wildcardMatch('*/short','/test/complex/and/short')).to.be(true);
     expect(pareTree.__wildcardMatch('/test*/short','/test/complex/and/short')).to.be(true);
-
     expect(pareTree.__wildcardMatch('/test/complex/*/short','/test/complex/and/long')).to.be(false);
     expect(pareTree.__wildcardMatch('/test/complex/*','/blah/complex/and/short')).to.be(false);
     expect(pareTree.__wildcardMatch('/test/*/*/short','/test/complex/and/long')).to.be(false);
     expect(pareTree.__wildcardMatch('/test*','/tes/complex/and/short')).to.be(false);
     expect(pareTree.__wildcardMatch('*/short','/test/complex/and/long')).to.be(false);
     expect(pareTree.__wildcardMatch('/test*/short','/test/complex/and/short/')).to.be(false);
-
-    //left right
-
-    // expect(pareTree.__wildcardMatch('*hort','/short*')).to.be(true);
-    //left left
-    // expect(pareTree.__wildcardMatch('*hort','*/complex/short')).to.be(true);
-    //left precise
-    // expect(pareTree.__wildcardMatch('*hort','*/complex/short')).to.be(true);
-    //left complex
-    //expect(pareTree.__wildcardMatch('*hort','*/complex/short')).to.be(true);
-
-
-    // expect(pareTree.__wildcardMatch('*/short','*/complex/and/short')).to.be(true);
-    // expect(pareTree.__wildcardMatch('/test/complex/*','/test/comp*')).to.be(true);
-    // expect(pareTree.__wildcardMatch('/test/*/*/short','/test*short')).to.be(true);
-    // expect(pareTree.__wildcardMatch('/test*','*test/com*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*hort','/short*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*hort','*/complex/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('*hort','*/complex/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('*/short','*/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/*','/test/comp*')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test*','*test/com*')).to.be(true);
 
     done();
-
   });
 
   it('tests the sorted object array', function (done) {
@@ -158,21 +146,6 @@ describe('functional tests wild pare', function () {
 
     done();
   });
-
-  // it('gets the largest contiguous section', function (done) {
-  //
-  //   var pareTree = new PareTree();
-  //
-  //   var testPath = "*a/testsegment*smallest/*smallerthan*";
-  //
-  //   var largestContiguous = pareTree.__getLargestContiguous({
-  //     pathSegments:testPath.split('*')
-  //   });
-  //
-  //   expect(largestContiguous).to.be('a/testsegment');
-  //
-  //   done();
-  // });
 
   it('segments the 4 types of path', function (done) {
 
@@ -490,15 +463,15 @@ describe('functional tests wild pare', function () {
 
     var pareTree = new PareTree();
 
-    //expect(pareTree.__wildcardSearchMatch('*', '*te*st*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*', '*te*st*')).to.be(true);
 
-    // expect(pareTree.__wildcardSearchMatch('*test/mat', '*te*st*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*test/mat', '*te*st*')).to.be(true);
     //
-    // expect(pareTree.__wildcardSearchMatch('*te*st*', '*test/mat')).to.be(true);
+    expect(pareTree.__wildcardMatch('*te*st*', '*test/mat')).to.be(true);
     //
-    // expect(pareTree.__wildcardSearchMatch('*te*s*t*', '*test/mat')).to.be(true);
+    expect(pareTree.__wildcardMatch('*te*s*t*', '*test/mat')).to.be(true);
 
-    expect(pareTree.__wildcardMatch('*e*ma*', '*test/mat')).to.be(true);//false
+    expect(pareTree.__wildcardMatch('*e*ma*', '*test/mat')).to.be(true);
 
     expect(pareTree.__wildcardMatch('*i*g1', '*str*ing*')).to.be(true);
 
@@ -511,10 +484,8 @@ describe('functional tests wild pare', function () {
     expect(pareTree.__wildcardMatch('test/lo*', 'test/long string*')).to.be(true);
 
     expect(pareTree.__wildcardMatch('*/test/match', '*st*')).to.be(true);
-
     //left left
     expect(pareTree.__wildcardMatch('*/test/match', '*st/match')).to.be(true);
-
     //right right
     expect(pareTree.__wildcardMatch('/test/match*', '/test/match/*')).to.be(true);
 
@@ -522,33 +493,25 @@ describe('functional tests wild pare', function () {
 
     expect(pareTree.__wildcardMatch('*test/match', '/test/mat*')).to.be(true);
 
-    expect(pareTree.__wildcardMatch('/test/match*', '/blah/match/*')).to.be(false);//false
-
+    expect(pareTree.__wildcardMatch('/test/match*', '/blah/match/*')).to.be(false);
     //right left
     expect(pareTree.__wildcardMatch('/test/mat*', '*test/match')).to.be(true);
-
     //precise left
     expect(pareTree.__wildcardMatch('*test/match', '/test/match')).to.be(true);
-
     //precise right
     expect(pareTree.__wildcardMatch('/test/mat*', '/test/match')).to.be(true);
-
     //left left
-    expect(pareTree.__wildcardMatch('*/test/match', '*st/blah')).to.be(false);//false
-
+    expect(pareTree.__wildcardMatch('*/test/match', '*st/blah')).to.be(false);
     //left right
-    expect(pareTree.__wildcardMatch('*test/match', '/test/mar*')).to.be(false);//false
-
+    expect(pareTree.__wildcardMatch('*test/match', '/test/mar*')).to.be(false);
     //right left
-    expect(pareTree.__wildcardMatch('/test/mat*', '*test/march')).to.be(false);//false
-
+    expect(pareTree.__wildcardMatch('/test/mat*', '*test/march')).to.be(false);
     //precise left
-    expect(pareTree.__wildcardMatch('*test/match', '/test/ma*rch')).to.be(false);//false
-
+    expect(pareTree.__wildcardMatch('*test/match', '/test/ma*rch')).to.be(false);
     //precise right
-    expect(pareTree.__wildcardMatch('/test/mat*', '*test/march')).to.be(false);//false
+    expect(pareTree.__wildcardMatch('/test/mat*', '*test/march')).to.be(false);
 
-    expect(pareTree.__wildcardMatch('*test/mat', '*pe*st*')).to.be(false);//false
+    expect(pareTree.__wildcardMatch('*test/mat', '*pe*st*')).to.be(false);
 
     return done();
   });

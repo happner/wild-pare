@@ -120,9 +120,11 @@ describe('wild-pare-perf', function () {
   });
 
 
-  var W_SUBSCRIPTION_COUNT = 10000;
+  var W_SUBSCRIPTION_COUNT = 100000;
 
   it('tests the wildcard search matching, wildcard on both paths', function(done){
+
+    this.timeout(300000);
 
     var pareTree = new PareTree();
 
@@ -154,6 +156,8 @@ describe('wild-pare-perf', function () {
   });
 
   it('tests the search matching, wildcard on one path', function(done){
+
+    this.timeout(300000);
 
     var pareTree = new PareTree();
 
@@ -247,6 +251,8 @@ describe('wild-pare-perf', function () {
 
       clients.forEach(function(sessionId){
 
+        //console.log('added:::', subscriptionPath);
+
         subscriptionTree.add(subscriptionPath, {key:sessionId, data:{test:"data"}});
 
         if (!subscriptionResults[sessionId]) subscriptionResults[sessionId] = {paths:{}};
@@ -255,21 +261,92 @@ describe('wild-pare-perf', function () {
       });
     });
 
-    var startedSearches = Date.now();
-
     var searched = 0;
+    var searching = 0;
+
+    var searchSubscriptions = [];
 
     subscriptions.every(function(subscriptionPath){
 
+      searching++;
+
+      searchSubscriptions.push(subscriptionPath.substring(0, subscriptionPath.length - 2) + '*');
+
+      return searching < SEARCHES;
+    });
+
+    var startedSearches = Date.now();
+
+    searchSubscriptions.forEach(function(subscriptionPath){
+
       searched++;
 
-      subscriptionPath = subscriptionPath.substring(0, subscriptionPath.length - 1) + '*';
+      console.log('searching:::', subscriptionPath);
 
-      subscriptionTree.search(subscriptionPath);
+      var items = subscriptionTree.search(subscriptionPath);
 
-      if (searched == SEARCHES) return false;
+      console.log(searched, items.length);
+    });
 
-      return true;
+    var endedSearches = Date.now();
+
+    testLog('searched through ' + N_SUBSCRIPTION_COUNT * CLIENT_COUNT + ' subscriptions ' + SEARCHES + ' times, in ' + (endedSearches - startedSearches) + ' milliseconds');
+
+    return done();
+
+  });
+
+  it('searches ' + N_SUBSCRIPTION_COUNT + ' subscriptions,' + SEARCHES + ' times, wildcard in search path and in key', function (done) {
+
+    this.timeout(60000);
+
+    var subscriptions = random.randomPaths({duplicate:DUPLICATE_KEYS, count:N_SUBSCRIPTION_COUNT});
+
+    var clients = random.string({count:CLIENT_COUNT});
+
+    var subscriptionTree = new PareTree();
+
+    var subscriptionResults = {};
+
+    subscriptions.forEach(function(subscriptionPath){
+
+      clients.forEach(function(sessionId){
+
+        //console.log('added:::', subscriptionPath);
+
+        var addPath = subscriptionPath.substring(0, subscriptionPath.length - 1) + '*';
+
+        subscriptionTree.add(addPath, {key:sessionId, data:{test:"data"}});
+
+        if (!subscriptionResults[sessionId]) subscriptionResults[sessionId] = {paths:{}};
+
+        subscriptionResults[sessionId].paths[subscriptionPath] = true;
+      });
+    });
+
+    var searched = 0;
+    var searching = 0;
+
+    var searchSubscriptions = [];
+
+    subscriptions.every(function(subscriptionPath){
+
+      searching++;
+
+      searchSubscriptions.push(subscriptionPath.substring(0, subscriptionPath.length - 2) + '*');
+
+      return searching < SEARCHES;
+    });
+
+    var startedSearches = Date.now();
+
+    searchSubscriptions.forEach(function(subscriptionPath){
+
+      searched++;
+
+      var items = subscriptionTree.search(subscriptionPath);
+
+      console.log(searched, items.length);
     });
 
     var endedSearches = Date.now();

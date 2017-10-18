@@ -528,6 +528,10 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-wildcard-left-recipient';
 
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
@@ -559,6 +563,10 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-wildcard-left-recipient';
 
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
@@ -589,6 +597,10 @@ describe('wild-pare-func', function () {
     var segmented = pareTree.__segmentPath('*/wildcard*complex/*');
 
     var recipient = 'test-wildcard-left-recipient';
+
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
@@ -620,7 +632,11 @@ describe('wild-pare-func', function () {
 
     var segmented = pareTree.__segmentPath('*/a/wildcard/left');
 
-    var recipient = 'test-wildcard-left-recipient';
+    var recipient = 'test-recipient';
+
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
@@ -649,9 +665,13 @@ describe('wild-pare-func', function () {
 
     var pareTree = new PareTree();
 
+    var recipient = 'test-recipient';
+
     var segmented = pareTree.__segmentPath('/a/wildcard/right/*');
 
-    var recipient = 'test-wildcard-left-recipient';
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
@@ -682,7 +702,11 @@ describe('wild-pare-func', function () {
 
     var segmented = pareTree.__segmentPath('*/wildcard*complex/*');
 
-    var recipient = 'test-wildcard-left-recipient';
+    var recipient = 'test-recipient';
+
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
@@ -714,7 +738,11 @@ describe('wild-pare-func', function () {
 
     var segmented = pareTree.__segmentPath('/a/wildcard/right/*');
 
-    var recipient = 'test-wildcard-left-recipient';
+    var recipient = 'test-recipient';
+
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
@@ -745,7 +773,11 @@ describe('wild-pare-func', function () {
 
     var segmented = pareTree.__segmentPath('*/wildcard/right/');
 
-    var recipient = 'test-wildcard-left-recipient';
+    var recipient = 'test-recipient';
+
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 
@@ -776,9 +808,15 @@ describe('wild-pare-func', function () {
 
     var segmented = pareTree.__segmentPath('*/wildcard*complex/*');
 
-    var recipient = 'test-wildcard-left-recipient';
+    var recipient = 'test-recipient';
+
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
 
@@ -808,7 +846,11 @@ describe('wild-pare-func', function () {
 
     var segmented = pareTree.__segmentPath('*/wildcard*complex/*');
 
-    var recipient = 'test-wildcard-left-recipient';
+    var recipient = 'test-recipient';
+
+    var segmentedDoNot = pareTree.__segmentPath('do/not/find');
+
+    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
 
     var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
 

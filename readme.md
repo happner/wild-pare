@@ -6,6 +6,12 @@
 
 Arbitrary wildcard searches in key/value stores are computationally expensive because of the amount of possible permutations for the wildcard, ie: searching for "/the/*" could return "/the/quick/red/fox" or "/the/slow/brown/cow" or "/the/other" etc. etc.. This issue is compounded when a subscription model is introduced, where the subscriptions are stored wildcard keys. A tree-like structure is essential if we want to avoid full list scans.
 
+What this library is good at:
+- For storing subscriptions with wildcards /test/subscription/*, and searching using non-wildcard queries: /test/subscription/1
+- For storing subscriptions with no wildcards /test/subscription/1, and searching using non-wildcard queries: /test/subscription/*
+
+NB: subscriptions that are wildcards, that get searched with wildcards, ie: /test/subscription/* /*/subscription/ are far slower, as full list scans are required fpr matching.
+
 wild-pare is in-memory subscription store that does arbitrary wildcard searches quickly, by implementing [louis's binary search tree](https://github.com/louischatriot/node-binary-search-tree) and branching the data by the key length, branches that are based on key lengths greater than the query segment (be it wildcard or precise), are pared away from the search.
 
 [Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key. Mcollina's [hyperid](https://github.com/mcollina/hyperid) was adapted to run on node versions 0.10 - 8 and included locally - as the unique id generation for creating subscriptions was the biggest performance hurdle. Also adapted [matcher](https://github.com/sindresorhus/matcher) to run on node 0.10. To all those people whose libraries I have adapted - thank you.
@@ -291,5 +297,6 @@ v0.10 - v8
 
 #### caveats
 
-- subscriptions that enclose the path with wildcards, ie \*/a/test/subscription/\* will possibly perform slower, because they are stored and searched through in a different manner and will always involve regex comparisons.
-- although it is very fast, the library is synchronous (blocking) - be aware of this in high-volume environments, I am thinking of an async version that stores data on file, making this a database of sorts.
+- subscriptions that enclose the path with wildcards, ie \*/a/test/subscription/\* will perform slower, because they are stored and searched through in a different manner and will always involve regex comparisons.
+- searches with wildcards in the query will perform slowly as well, as these will entail a many-to-many search.
+- although it is fast, the library is synchronous (blocking) - be aware of this in high-volume environments, I am thinking of an async version that stores data on file, making this a database of sorts.

@@ -54,32 +54,6 @@ PareTree.prototype.__initialize = function () {
     this.__lowerBounds = {};
 
     this.__comedian = new Comedian(this.options.wildcardCache);
-
-    this.__analytics = {
-        started: {},
-        accumulated: {},
-        duration: {},
-        counters: {},
-        averages: {}
-    };
-};
-
-PareTree.prototype.__averageTimeStart = function (key) {
-
-    this.__analytics.started[key] = Date.now();
-};
-
-PareTree.prototype.__averageTimeEnd = function (key) {
-
-    if (!this.__analytics.counters[key]) this.__analytics.counters[key] = 0;
-
-    if (!this.__analytics.accumulated[key]) this.__analytics.accumulated[key] = 0;
-
-    this.__analytics.counters[key]++;
-
-    this.__analytics.accumulated[key] += Date.now() - this.__analytics.started[key];
-
-    this.__analytics.averages[key] = this.__analytics.accumulated[key] / this.__analytics.counters[key];
 };
 
 PareTree.prototype.__getTrunk = function (pathInfo) {
@@ -211,19 +185,9 @@ PareTree.prototype.__updateBounds = function (subscriptionType, count, path) {
 
 PareTree.prototype.__addSubscription = function (pathInfo, recipient) {
 
-    //this.__averageTimeStart('this.__getTree'); //after trying to understand a flame graph I decided to do this, much simpler to understand...
-
-    //this.__averageTimeEnd('this.__getTree');
-
-    //this.__averageTimeStart('this.__getSegment');
-
     var trunk = this.__getTrunk(pathInfo);
 
     var segment = trunk.search(pathInfo.segmentPath.length)[0];
-
-    //this.__averageTimeEnd('this.__getSegment');
-
-    //this.__averageTimeStart('!existingSegment');
 
     if (segment == null) {
 
@@ -236,12 +200,6 @@ PareTree.prototype.__addSubscription = function (pathInfo, recipient) {
 
         trunk.insert(pathInfo.segmentPath.length, segment);
     }
-
-    //this.__averageTimeEnd('!existingSegment');
-
-    //this.__averageTimeStart('subscriptionList.search(segment)');
-
-    //simon simo sim si s n on mon imon simon imo im m
 
     var branch = segment.branches.search(pathInfo.segmentPath)[0];
 
@@ -258,10 +216,6 @@ PareTree.prototype.__addSubscription = function (pathInfo, recipient) {
         segment.branchCount++;
     }
 
-    //this.__averageTimeEnd('subscriptionList.search(segment)');
-
-    //this.__averageTimeStart('existingSubscription.recipients[recipient.key]');
-
     var existingRecipient = branch.recipients[recipient.key];
 
     if (!existingRecipient) {
@@ -277,10 +231,6 @@ PareTree.prototype.__addSubscription = function (pathInfo, recipient) {
     }
 
     existingRecipient.refCount += (recipient.refCount == null || recipient.refCount == 0 ? 1 : recipient.refCount);
-
-    //this.__averageTimeEnd('existingSubscription.recipients[recipient.key]');
-
-    //this.__averageTimeStart('this.__subscriptionId');
 
     var subscriptionId = this.__createId(recipient.key, pathInfo.type, pathInfo.segmentPath);
 
@@ -450,18 +400,16 @@ PareTree.prototype.__removeWildcardSubscriptionEntry = function (subscriptionDat
 
 PareTree.prototype.__removeSpecific = function (options) {
 
-    var _this = this;
-
-    var subscriptionData = _this.__decodeId(options.id);
+    var subscriptionData = this.__decodeId(options.id);
 
     if (subscriptionData == null) return null;
 
-    var trunk = _this.__getTrunk(subscriptionData);
+    var trunk = this.__getTrunk(subscriptionData);
 
     if (subscriptionData.type === this.SEGMENT_TYPE.ALL)
-        return _this.__removeAllSubscriptionEntry(subscriptionData, options.id);
+        return this.__removeAllSubscriptionEntry(subscriptionData, options.id);
 
-    return _this.__removeWildcardSubscriptionEntry(subscriptionData, trunk, options.id);
+    return this.__removeWildcardSubscriptionEntry(subscriptionData, trunk, options.id);
 };
 
 PareTree.prototype.__removeByPath = function (options) {
@@ -522,9 +470,11 @@ PareTree.prototype.__appendQueryRecipient = function (recipient, searchPath, app
 
     var _this = this;
 
-    return recipient.subscriptions.map(function (subscription) {
+    //[start:{"key":"__appendQueryRecipient"}:start]
 
-        if ((type === _this.SEGMENT_TYPE.WILDCARD_COMPLEX || wildcard) && !_this.__comedian.matches(subscription.path, searchPath)) return;
+    recipient.subscriptions.map(function (subscription) {
+
+        if ((type === _this.SEGMENT_TYPE.WILDCARD_COMPLEX || wildcard == true) && !_this.__wildcardMatch(subscription.path, searchPath)) return;
 
         appendTo.push({
             key: recipient.key,
@@ -533,11 +483,15 @@ PareTree.prototype.__appendQueryRecipient = function (recipient, searchPath, app
             path: subscription.path
         });
     });
+
+    //[end:{"key":"__appendQueryRecipient"}:end]
 };
 
 PareTree.prototype.__appendRecipients = function (searchPath, branch, subscriptions, type, wildcard) {
 
     var _this = this;
+
+    //[start:{"key":"__appendRecipients"}:start]
 
     Object.keys(branch.recipients).forEach(function (recipientKey) {
 
@@ -545,6 +499,8 @@ PareTree.prototype.__appendRecipients = function (searchPath, branch, subscripti
 
         _this.__appendQueryRecipient(recipient, searchPath.path, subscriptions, type, wildcard);
     });
+
+    //[end:{"key":"__appendRecipients"}:end]
 };
 
 PareTree.prototype.__iterateAllBranches = function (searchPath, subscriptions, handler, type) {
@@ -576,8 +532,6 @@ PareTree.prototype.__iteratePrecise = function (searchPath, subscriptions, handl
 
                 Object.keys(segment.branches).forEach(function (branchPath) {
 
-                    if (_this.__wildcardMatch(branchPath, searchPath.path) === false) return;
-
                     handler(searchPath, segment.branches[branchPath], subscriptions, _this.SEGMENT_TYPE.PRECISE);
                 });
             });
@@ -597,17 +551,15 @@ PareTree.prototype.__permutate = function (path, type) {
 
     var permutations = [];
 
-    var _this = this;
-
     var permPath = path;
 
     if (this.__counts[type] == 0 || this.__counts[type] == null) {
         return [];//no possible permutations
     }
 
-    if (type === _this.SEGMENT_TYPE.WILDCARD_RIGHT) {
+    if (type === this.SEGMENT_TYPE.WILDCARD_RIGHT) {
 
-        permPath = path.substring(0, _this.__upperBounds[type] + 1);
+        permPath = path.substring(0, this.__upperBounds[type] + 1);
 
         for (var i = 0; i < permPath.length; i++) {
 
@@ -615,9 +567,9 @@ PareTree.prototype.__permutate = function (path, type) {
         }
     }
 
-    if (type === _this.SEGMENT_TYPE.WILDCARD_LEFT) {
+    if (type === this.SEGMENT_TYPE.WILDCARD_LEFT) {
 
-        permPath = path.substring(path.length - (_this.__upperBounds[type]));
+        permPath = path.substring(path.length - (this.__upperBounds[type]));
 
         for (var i = permPath.length; i > 0; i--) {
             permutations.push(permPath.substring(permPath.length - i));
@@ -656,9 +608,8 @@ PareTree.prototype.__iterateWildcard = function (searchPath, subscriptions, hand
 
         _this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX].search(i).forEach(function (branch) {
 
-            if (branch.path.length <= searchPath.path.length) {
+            if (branch.path.length <= searchPath.path.length)
                 handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
-            }
         });
     }
 };
@@ -667,11 +618,17 @@ PareTree.prototype.__iterateWildcardSearch = function (searchPath, subscriptions
 
     var _this = this;
 
+    //[start:{"key":"__iterateWildcardSearch"}:start]
+
     if (!_this.__allBranches[type]) return;
 
     _this.__allBranches[type].array().forEach(function (branch) {
-        handler(searchPath, branch, subscriptions, type, true);
+
+        //handler(searchPath, branch, subscriptions, type, true);
+        _this.__handleMatch(searchPath, branch, subscriptions, handler);
     });
+
+    //[end:{"key":"__iterateWildcardSearch"}:end]
 };
 
 PareTree.prototype.__endsWith = function (str1, str2) {
@@ -685,60 +642,54 @@ PareTree.prototype.__endsWith = function (str1, str2) {
     return str1.substring(str1.length - str2.length) == str2;
 };
 
-PareTree.prototype.__iterateWildcardSearchPrecise = function (searchPath, subscriptions, handler) {
+PareTree.prototype.__handleMatch = function(searchPath, branch, subscriptions, handler){
 
-    var _this = this;
+    //[start:{"key":"__handleMatch"}:start]
 
-    if (!_this.__allBranches[_this.SEGMENT_TYPE.PRECISE]) return;
+    if (searchPath.type == this.SEGMENT_TYPE.WILDCARD_LEFT && this.__endsWith(branch.path, searchPath.segmentPath))
+        return handler(searchPath, branch, subscriptions);
 
-    for (var i = searchPath.segmentPath.length; i <= _this.__upperBounds[_this.SEGMENT_TYPE.PRECISE]; i++) {
+    if (searchPath.type == this.SEGMENT_TYPE.WILDCARD_RIGHT && branch.path.indexOf(searchPath.segmentPath) == 0)
+        return handler(searchPath, branch, subscriptions);
 
-        _this.__allBranches[_this.SEGMENT_TYPE.PRECISE].search(i).forEach(function (branch) {
+    handler(searchPath, branch, subscriptions, this.SEGMENT_TYPE.WILDCARD_COMPLEX);
 
-            if (searchPath.type == _this.SEGMENT_TYPE.WILDCARD_LEFT && _this.__endsWith(branch.path, searchPath.segmentPath)) {
-                handler(searchPath, branch, subscriptions);
-            }
-            else if (searchPath.type == _this.SEGMENT_TYPE.WILDCARD_RIGHT && branch.path.indexOf(searchPath.segmentPath) == 0) {
-                handler(searchPath, branch, subscriptions);
-            }
-            else if (branch.path.indexOf(searchPath.segmentPath) > -1) {
-                handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
-            }
-        });
-    }
+    //[end:{"key":"__handleMatch"}:end]
 };
 
 PareTree.prototype.__wildcardSearchAndAppend = function (searchPath, subscriptions, excludeAll) {
 
     var _this = this;
 
+    //[start:{"key":"__wildcardSearchAndAppend"}:start]
+
     var handler = _this.__appendRecipients.bind(_this);
 
     _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT);
     _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT);
     _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+    _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.PRECISE);
 
-    _this.__iterateWildcardSearchPrecise(searchPath, subscriptions, handler);
-
+    //_this.__iterateWildcardSearchPrecise(searchPath, subscriptions, handler);
 
     if (!excludeAll) this.__iterateAll(searchPath, subscriptions, handler);
+
+    //[end:{"key":"__wildcardSearchAndAppend"}:end]
 };
 
 PareTree.prototype.__searchAndAppend = function (searchPath, subscriptions, excludeAll) {
 
-    var _this = this;
-
-    var handler = _this.__appendRecipients.bind(_this);
+    var handler = this.__appendRecipients.bind(this);
 
     if (searchPath.path === '*') {
 
-        this.__iterateAllBranches(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT);
+        this.__iterateAllBranches(searchPath, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_LEFT);
 
-        this.__iterateAllBranches(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT);
+        this.__iterateAllBranches(searchPath, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_RIGHT);
 
-        this.__iterateAllBranches(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+        this.__iterateAllBranches(searchPath, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_COMPLEX);
 
-        this.__iterateAllBranches(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.PRECISE);
+        this.__iterateAllBranches(searchPath, subscriptions, handler, this.SEGMENT_TYPE.PRECISE);
 
     } else {
 
@@ -748,10 +699,11 @@ PareTree.prototype.__searchAndAppend = function (searchPath, subscriptions, excl
     }
 
     if (!excludeAll) this.__iterateAll(searchPath, subscriptions, handler);
-
 };
 
 PareTree.prototype.search = function (path, options) {
+
+    //[start:{"key":"search"}:start]
 
     if (path == null || (path.replace && path.replace('*', '') == '')) path = '*';
 
@@ -788,6 +740,8 @@ PareTree.prototype.search = function (path, options) {
     if (options.decouple) subscriptions = this.__decouple(subscriptions);
 
     this.__cache.set(cacheKey, subscriptions);
+
+    //[end:{"key":"search"}:end]
 
     return subscriptions;
 };

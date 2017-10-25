@@ -525,6 +525,8 @@ describe('wild-pare-sanity', function () {
 
     expect(searchResults['/precise/double'].length).to.be(5);
 
+
+    debugger;
     subscriptionTree.remove('/precise/double');
 
     expect(subscriptionTree.search('/precise/double').length).to.be(3);

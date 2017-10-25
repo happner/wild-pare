@@ -1,8 +1,8 @@
 module.exports = {
-  integer:function getRandomInt(min, max) {
+  integer: function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   },
-  string:function(options){
+  string: function (options) {
 
     if (options == null) options = {};
 
@@ -10,17 +10,17 @@ module.exports = {
 
     var loopCount = options.length / 10 + 2;
 
-    var createString = function(){
+    var createString = function () {
       var str = "";
 
-      for (var i = 0;i < loopCount;i++){
+      for (var i = 0; i < loopCount; i++) {
         str += require('shortid').generate();
       }
 
       return str.substring(0, options.length);
     };
 
-    if (options.count){
+    if (options.count) {
 
       var stringArr = [];
 
@@ -31,7 +31,7 @@ module.exports = {
 
     } else return createString();
   },
-  randomPaths:function(options){
+  randomPaths: function (options) {
 
     if (options == null) options = {};
 
@@ -43,14 +43,14 @@ module.exports = {
 
     var paths = [];
 
-    for (var itemCount = 0; itemCount < options.count; itemCount++){
+    for (var itemCount = 0; itemCount < options.count; itemCount++) {
 
       var maxSegments = this.integer(1, options.maxSegments);
       var segments = [];
 
       if (options.prefix) segments.push(options.prefix);
 
-      for (var segmentCount = 0; segmentCount < maxSegments; segmentCount++){
+      for (var segmentCount = 0; segmentCount < maxSegments; segmentCount++) {
         segments.push(this.string());
       }
 
@@ -58,11 +58,10 @@ module.exports = {
 
       var subscription = segments.join(options.segmentDelimiter);
 
-      if (options.duplicate){
+      if (options.duplicate) {
         for (var duplicateCount = 0; duplicateCount < options.duplicate; duplicateCount++)
           paths.push(subscription);
-      }
-      else paths.push(subscription);
+      } else paths.push(subscription);
     }
 
     return paths;

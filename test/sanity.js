@@ -35,246 +35,280 @@ describe('wild-pare-sanity', function () {
 
     subscriptionRef1 = subscriptionTree.add('/a/subscription/path', {
       key: 'subscriber1',
-      data: {some: {custom: "data"}, value: 12}
+      data: {
+        some: {
+          custom: "data"
+        },
+        value: 12
+      }
     });
 
-      //returns:
+    //returns:
 
-      // {
-      //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
-      // }
+    // {
+    //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
+    // }
 
-      var queryResults1 = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/precise/subscription'})
+    var queryResults1 = subscriptionTree.search('/a/subscription/path'); //or subscriptionTree.search({path:'/a/precise/subscription'})
 
-      // console.log('queryResults:::');
-      // console.log(JSON.stringify(queryResults1, null, 2));
-
-
-      //returns a single subscription:
-
-      // [
-      //   {
-      //     "key": "subscriber1",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 12
-      //     },
-      //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
-      //   }
-      // ]
+    // console.log('queryResults:::');
+    // console.log(JSON.stringify(queryResults1, null, 2));
 
 
-      //add another subscription to the same path but with different data:
+    //returns a single subscription:
 
-      var subscriptionRef2 = subscriptionTree.add('/a/subscription/path', {
-        key: 'subscriber1',
-        data: {some: {custom: "data"}, value: 6}
-      });
+    // [
+    //   {
+    //     "key": "subscriber1",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 12
+    //     },
+    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
+    //   }
+    // ]
 
-      //returns:
 
-      // {
-      //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-      // }
+    //add another subscription to the same path but with different data:
+
+    var subscriptionRef2 = subscriptionTree.add('/a/subscription/path', {
+      key: 'subscriber1',
+      data: {
+        some: {
+          custom: "data"
+        },
+        value: 6
+      }
+    });
+
+    //returns:
+
+    // {
+    //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
+    // }
 
 
-      // console.log('EXAMPLE3:::');
-      // console.log(JSON.stringify(subscriptionRef2, null, 2));
+    // console.log('EXAMPLE3:::');
+    // console.log(JSON.stringify(subscriptionRef2, null, 2));
 
-      //query the tree:
+    //query the tree:
 
-      var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/subscription/path'})
+    var queryResults2 = subscriptionTree.search('/a/subscription/path'); //or subscriptionTree.search({path:'/a/subscription/path'})
 
-      // console.log('queryResults2:::');
-      // console.log(JSON.stringify(queryResults2, null, 2));
+    // console.log('queryResults2:::');
+    // console.log(JSON.stringify(queryResults2, null, 2));
 
-      //returns our subscriptions:
+    //returns our subscriptions:
 
-      // [
-      //   {
-      //     "key": "subscriber1",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 12
-      //     },
-      //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
-      //   },
-      //   {
-      //     "key": "subscriber1",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 6
-      //     },
-      //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-      //   }
-      // ]
+    // [
+    //   {
+    //     "key": "subscriber1",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 12
+    //     },
+    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
+    //   },
+    //   {
+    //     "key": "subscriber1",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 6
+    //     },
+    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
+    //   }
+    // ]
 
-      //REMOVE SUBSCRIPTIONS:
+    //REMOVE SUBSCRIPTIONS:
 
-      //remove a subscription, returns array containing subscription ids removed in {id:[id]} objects:
+    //remove a subscription, returns array containing subscription ids removed in {id:[id]} objects:
 
-      var removalResult = subscriptionTree.remove(subscriptionRef1); // or subscriptionTree.remove({id:subscriptionReference.id}) or subscriptionTree.remove(subscriptionReference.recipient.path)
+    var removalResult = subscriptionTree.remove(subscriptionRef1); // or subscriptionTree.remove({id:subscriptionReference.id}) or subscriptionTree.remove(subscriptionReference.recipient.path)
 
-      //returns a reference to our first subscription:
+    //returns a reference to our first subscription:
 
-      // [
-      //   {
-      //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
-      //   }
-      // ]
+    // [
+    //   {
+    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
+    //   }
+    // ]
 
-      // console.log('EXAMPLE5:::');
-      // console.log(JSON.stringify(removalResult, null, 2));
+    // console.log('EXAMPLE5:::');
+    // console.log(JSON.stringify(removalResult, null, 2));
 
-      //we do a search again, our first subscription is no longer there
+    //we do a search again, our first subscription is no longer there
 
-      var queryResultsRemove = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/subscription/path'})
+    var queryResultsRemove = subscriptionTree.search('/a/subscription/path'); //or subscriptionTree.search({path:'/a/subscription/path'})
 
-      //returns:
+    //returns:
 
-      // [
-      //   {
-      //     "key": "subscriber1",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 6
-      //     },
-      //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-      //   }
-      // ]
+    // [
+    //   {
+    //     "key": "subscriber1",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 6
+    //     },
+    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
+    //   }
+    // ]
 
-      // console.log('queryResultsRemove:::');
-      // console.log(JSON.stringify(queryResultsRemove, null, 2));
+    // console.log('queryResultsRemove:::');
+    // console.log(JSON.stringify(queryResultsRemove, null, 2));
 
-      //you can also remove all subscriptions matching a path, regardless of what subscriber:
-      // ie: subscriptionTree.remove('/a/subscription/*');
+    //you can also remove all subscriptions matching a path, regardless of what subscriber:
+    // ie: subscriptionTree.remove('/a/subscription/*');
 
-      //ADD WILDCARD SUBSCRIPTIONS:
+    //ADD WILDCARD SUBSCRIPTIONS:
 
-      //add a wildcard subscription, wildcards are the * character - wildcards allow for any amount of text, so the following are valid wildcard paths:
-      // /a/wildcard/subscription/* or */wildcard/subscription* or */wildcard* or */wildcard*/subscription/*
-      // and would all return for a search that looks like this: /a/subscription/path
+    //add a wildcard subscription, wildcards are the * character - wildcards allow for any amount of text, so the following are valid wildcard paths:
+    // /a/wildcard/subscription/* or */wildcard/subscription* or */wildcard* or */wildcard*/subscription/*
+    // and would all return for a search that looks like this: /a/subscription/path
 
-      //right wildcard:
+    //right wildcard:
 
-      var wildcardRightRef = subscriptionTree.add('/a/subscription/*', {
-        key: 'subscriber2',
-        data: {some: {custom: "data"}, value: 5}
-      });
+    var wildcardRightRef = subscriptionTree.add('/a/subscription/*', {
+      key: 'subscriber2',
+      data: {
+        some: {
+          custom: "data"
+        },
+        value: 5
+      }
+    });
 
-      //left wildcard:
+    //left wildcard:
 
-      var wildcardLeftRef = subscriptionTree.add('*/subscription/path', {
-        key: 'subscriber3',
-        data: {some: {custom: "data"}, value: 15}
-      });
+    var wildcardLeftRef = subscriptionTree.add('*/subscription/path', {
+      key: 'subscriber3',
+      data: {
+        some: {
+          custom: "data"
+        },
+        value: 15
+      }
+    });
 
-      //we now query our list, and should get 3 subscriptions returned,
-      //as the wildcards match up and the subscriptionRef2 subscription also matches our search path:
+    //we now query our list, and should get 3 subscriptions returned,
+    //as the wildcards match up and the subscriptionRef2 subscription also matches our search path:
 
-      var queryResultsWildcard = subscriptionTree.search({path: '/a/subscription/path'});
+    var queryResultsWildcard = subscriptionTree.search({
+      path: '/a/subscription/path'
+    });
 
-      //returns:
+    //returns:
 
-      // [
-      //   {
-      //     "key": "subscriber1",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 6
-      //     },
-      //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-      //   },
-      //   {
-      //     "key": "subscriber2",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 5
-      //     },
-      //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
-      //   },
-      //   {
-      //     "key": "subscriber3",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 15
-      //     },
-      //     "id": "subscriber3&1&D7R8LYFvSRCTAP5s88Uonw/3&/subscription/path"
-      //   }
-      // ]
+    // [
+    //   {
+    //     "key": "subscriber1",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 6
+    //     },
+    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
+    //   },
+    //   {
+    //     "key": "subscriber2",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 5
+    //     },
+    //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
+    //   },
+    //   {
+    //     "key": "subscriber3",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 15
+    //     },
+    //     "id": "subscriber3&1&D7R8LYFvSRCTAP5s88Uonw/3&/subscription/path"
+    //   }
+    // ]
 
-      // console.log('EXAMPLE6:::');
-      // console.log(JSON.stringify(queryResultsWildcard, null, 2));
+    // console.log('EXAMPLE6:::');
+    // console.log(JSON.stringify(queryResultsWildcard, null, 2));
 
-      //MONGO STYLE FILTERS:
+    //MONGO STYLE FILTERS:
 
-      queryResultsWildcard = subscriptionTree.search({path: '/a/subscription/path', filter: {key: 'subscriber2'}});//only subscriber2's subscriptions
+    queryResultsWildcard = subscriptionTree.search({
+      path: '/a/subscription/path',
+      filter: {
+        key: 'subscriber2'
+      }
+    }); //only subscriber2's subscriptions
 
-      //returns:
+    //returns:
 
-      // [
-      //   {
-      //     "key": "subscriber2",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 5
-      //     },
-      //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
-      //   }
-      // ]
+    // [
+    //   {
+    //     "key": "subscriber2",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 5
+    //     },
+    //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
+    //   }
+    // ]
 
-      // console.log('EXAMPLE7:::');
-      // console.log(JSON.stringify(queryResultsWildcard, null, 2));
+    // console.log('EXAMPLE7:::');
+    // console.log(JSON.stringify(queryResultsWildcard, null, 2));
 
-      //filtering by the subscription data, using an $lte operator:
+    //filtering by the subscription data, using an $lte operator:
 
-      queryResultsWildcard = subscriptionTree.search({path: '/a/subscription/path', filter: {"data.value":{$lte:10}}});//only subscriptions with a data.value less than 10
+    queryResultsWildcard = subscriptionTree.search({
+      path: '/a/subscription/path',
+      filter: {
+        "data.value": {
+          $lte: 10
+        }
+      }
+    }); //only subscriptions with a data.value less than 10
 
-      //returns:
+    //returns:
 
-      // [
-      //   {
-      //     "key": "subscriber1",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 6
-      //     },
-      //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-      //   },
-      //   {
-      //     "key": "subscriber2",
-      //     "data": {
-      //       "some": {
-      //         "custom": "data"
-      //       },
-      //       "value": 5
-      //     },
-      //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
-      //   }
-      // ]
+    // [
+    //   {
+    //     "key": "subscriber1",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 6
+    //     },
+    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
+    //   },
+    //   {
+    //     "key": "subscriber2",
+    //     "data": {
+    //       "some": {
+    //         "custom": "data"
+    //       },
+    //       "value": 5
+    //     },
+    //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
+    //   }
+    // ]
 
-      // console.log('EXAMPLE8:::');
-      // console.log(JSON.stringify(queryResultsWildcard, null, 2));
+    // console.log('EXAMPLE8:::');
+    // console.log(JSON.stringify(queryResultsWildcard, null, 2));
 
-      done();
+    done();
   });
 
   it('sense checks subscriptions and their attendant queries, by adding searching and removing', function (done) {
@@ -311,43 +345,138 @@ describe('wild-pare-sanity', function () {
 
     var searchResults = {};
 
-    subscriptionTree.add('***', {key: allKey, data: {test: 1}});
+    subscriptionTree.add('***', {
+      key: allKey,
+      data: {
+        test: 1
+      }
+    });
 
-    var testLeft = subscriptionTree.add('*/test/left', {key: leftKey, data: {test: 2}});
+    var testLeft = subscriptionTree.add('*/test/left', {
+      key: leftKey,
+      data: {
+        test: 2
+      }
+    });
 
-    subscriptionTree.add('test/right/*', {key: rightKey, data: {test: 3}});
+    subscriptionTree.add('test/right/*', {
+      key: rightKey,
+      data: {
+        test: 3
+      }
+    });
 
-    subscriptionTree.add('short/*/test/complex', {key: complexLeftKey, data: {test: 4}});
+    subscriptionTree.add('short/*/test/complex', {
+      key: complexLeftKey,
+      data: {
+        test: 4
+      }
+    });
 
-    subscriptionTree.add('/test/complex/*/short', {key: complexRightKey, data: {test: 5}});
+    subscriptionTree.add('/test/complex/*/short', {
+      key: complexRightKey,
+      data: {
+        test: 5
+      }
+    });
 
-    subscriptionTree.add('/test/complex/*', {key: complexRightKey1, data: {test: 5}});
+    subscriptionTree.add('/test/complex/*', {
+      key: complexRightKey1,
+      data: {
+        test: 5
+      }
+    });
 
-    subscriptionTree.add('test/right/*/short/*/short', {key: multipleRightKey, data: {test: 6}});
+    subscriptionTree.add('test/right/*/short/*/short', {
+      key: multipleRightKey,
+      data: {
+        test: 6
+      }
+    });
 
-    subscriptionTree.add('test/right/*/short', {key: multipleRightKey, data: {test: 7}});
+    subscriptionTree.add('test/right/*/short', {
+      key: multipleRightKey,
+      data: {
+        test: 7
+      }
+    });
 
-    var testRef1 = subscriptionTree.add('short/*test/right/*/short', {key: multipleLeftKey, data: {test: 8}});
+    var testRef1 = subscriptionTree.add('short/*test/right/*/short', {
+      key: multipleLeftKey,
+      data: {
+        test: 8
+      }
+    });
 
-    subscriptionTree.add('/precise/test', {key: preciseKey, data: {test: 9}});
+    subscriptionTree.add('/precise/test', {
+      key: preciseKey,
+      data: {
+        test: 9
+      }
+    });
 
-    subscriptionTree.add('/precise/double', {key: doubleSubscribePreciseKey, data: {test: 10}});
+    subscriptionTree.add('/precise/double', {
+      key: doubleSubscribePreciseKey,
+      data: {
+        test: 10
+      }
+    });
 
-    subscriptionTree.add('/precise/double', {key: doubleSubscribePreciseKey, data: {test: 11}});
+    subscriptionTree.add('/precise/double', {
+      key: doubleSubscribePreciseKey,
+      data: {
+        test: 11
+      }
+    });
 
-    subscriptionTree.add('double/right/*', {key: doubleSubscribeRightKey, data: {test: 12}});
+    subscriptionTree.add('double/right/*', {
+      key: doubleSubscribeRightKey,
+      data: {
+        test: 12
+      }
+    });
 
-    subscriptionTree.add('double/right/*', {key: doubleSubscribeRightKey, data: {test: 13}});
+    subscriptionTree.add('double/right/*', {
+      key: doubleSubscribeRightKey,
+      data: {
+        test: 13
+      }
+    });
 
-    subscriptionTree.add('*/double/left', {key: doubleSubscribeLeftKey, data: {test: 14}});
+    subscriptionTree.add('*/double/left', {
+      key: doubleSubscribeLeftKey,
+      data: {
+        test: 14
+      }
+    });
 
-    subscriptionTree.add('*/double/left', {key: doubleSubscribeLeftKey, data: {test: 15}});
+    subscriptionTree.add('*/double/left', {
+      key: doubleSubscribeLeftKey,
+      data: {
+        test: 15
+      }
+    });
 
-    var tripleAddRef = subscriptionTree.add('***', {key: allTripleKey, data: {test: 16}});
+    var tripleAddRef = subscriptionTree.add('***', {
+      key: allTripleKey,
+      data: {
+        test: 16
+      }
+    });
 
-    subscriptionTree.add('*', {key: allTripleKey, data: {test: 17}});
+    subscriptionTree.add('*', {
+      key: allTripleKey,
+      data: {
+        test: 17
+      }
+    });
 
-    subscriptionTree.add('**', {key: allTripleKey, data: {test: 18}});
+    subscriptionTree.add('**', {
+      key: allTripleKey,
+      data: {
+        test: 18
+      }
+    });
 
     //
     searchResults['a/test/left'] = subscriptionTree.search('a/test/left');
@@ -415,9 +544,14 @@ describe('wild-pare-sanity', function () {
 
     this.timeout(300000);
 
-    var subscriptions = random.randomPaths({duplicate: DUPLICATE_KEYS, count: SUBSCRIPTION_COUNT});
+    var subscriptions = random.randomPaths({
+      duplicate: DUPLICATE_KEYS,
+      count: SUBSCRIPTION_COUNT
+    });
 
-    var clients = random.string({count: CLIENT_COUNT});
+    var clients = random.string({
+      count: CLIENT_COUNT
+    });
 
     var subscriptionTree = new PareTree();
 
@@ -429,9 +563,16 @@ describe('wild-pare-sanity', function () {
 
       clients.forEach(function (sessionId) {
 
-        subscriptionTree.add(subscriptionPath, {key: sessionId, data: {test: "data"}});
+        subscriptionTree.add(subscriptionPath, {
+          key: sessionId,
+          data: {
+            test: "data"
+          }
+        });
 
-        if (!subscriptionResults[sessionId]) subscriptionResults[sessionId] = {paths: {}};
+        if (!subscriptionResults[sessionId]) subscriptionResults[sessionId] = {
+          paths: {}
+        };
 
         subscriptionResults[sessionId].paths[subscriptionPath] = true;
       });
@@ -453,9 +594,14 @@ describe('wild-pare-sanity', function () {
 
     this.timeout(300000);
 
-    var subscriptions = random.randomPaths({duplicate: DUPLICATE_KEYS, count: SUBSCRIPTION_COUNT});
+    var subscriptions = random.randomPaths({
+      duplicate: DUPLICATE_KEYS,
+      count: SUBSCRIPTION_COUNT
+    });
 
-    var clients = random.string({count: CLIENT_COUNT});
+    var clients = random.string({
+      count: CLIENT_COUNT
+    });
 
     var subscriptionTree = new PareTree();
 
@@ -465,9 +611,16 @@ describe('wild-pare-sanity', function () {
 
       clients.forEach(function (sessionId) {
 
-        subscriptionTree.add(subscriptionPath, {key: sessionId, data: {test: "data"}});
+        subscriptionTree.add(subscriptionPath, {
+          key: sessionId,
+          data: {
+            test: "data"
+          }
+        });
 
-        if (!subscriptionResults[sessionId]) subscriptionResults[sessionId] = {paths: {}};
+        if (!subscriptionResults[sessionId]) subscriptionResults[sessionId] = {
+          paths: {}
+        };
 
         subscriptionResults[sessionId].paths[subscriptionPath] = true;
       });

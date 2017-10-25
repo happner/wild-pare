@@ -23,24 +23,24 @@ describe('wild-pare-func', function () {
 
     var pareTree = new PareTree();
 
-    expect(pareTree.__wildcardMatch('/test/complex/*/short','/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/complex/*','/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/*/*/short','/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test*','/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('*/short','/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test*/short','/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/complex/*/short','/test/complex/and/long')).to.be(false);
-    expect(pareTree.__wildcardMatch('/test/complex/*','/blah/complex/and/short')).to.be(false);
-    expect(pareTree.__wildcardMatch('/test/*/*/short','/test/complex/and/long')).to.be(false);
-    expect(pareTree.__wildcardMatch('/test*','/tes/complex/and/short')).to.be(false);
-    expect(pareTree.__wildcardMatch('*/short','/test/complex/and/long')).to.be(false);
-    expect(pareTree.__wildcardMatch('/test*/short','/test/complex/and/short/')).to.be(false);
-    expect(pareTree.__wildcardMatch('*hort','/short*')).to.be(true);
-    expect(pareTree.__wildcardMatch('*hort','*/complex/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('*hort','*/complex/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('*/short','*/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/complex/*','/test/comp*')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test*','*test/com*')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/*/short', '/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/*', '/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/*/*/short', '/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test*', '/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('*/short', '/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test*/short', '/test/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/*/short', '/test/complex/and/long')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test/complex/*', '/blah/complex/and/short')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test/*/*/short', '/test/complex/and/long')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test*', '/tes/complex/and/short')).to.be(false);
+    expect(pareTree.__wildcardMatch('*/short', '/test/complex/and/long')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test*/short', '/test/complex/and/short/')).to.be(false);
+    expect(pareTree.__wildcardMatch('*hort', '/short*')).to.be(true);
+    expect(pareTree.__wildcardMatch('*hort', '*/complex/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('*hort', '*/complex/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('*/short', '*/complex/and/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/*', '/test/comp*')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test*', '*test/com*')).to.be(true);
 
     done();
   });
@@ -59,23 +59,29 @@ describe('wild-pare-func', function () {
 
     var RANDOM_MAX = 10;
 
-    for (var i = 0; i < TESTCOUNT; i++){
+    for (var i = 0; i < TESTCOUNT; i++) {
 
       var last = random.integer(1, RANDOM_MAX);
 
-      for (var ii = 0; ii < last; ii++){
+      for (var ii = 0; ii < last; ii++) {
 
-        var randomStrings = random.string({length:20, count:last});
+        var randomStrings = random.string({
+          length: 20,
+          count: last
+        });
 
         index++;
 
         if (ii == 0) testRandomFirstIndexes[i] = last;
 
-        testSorted.insert({size:i, subkey:randomStrings[ii]});
+        testSorted.insert({
+          size: i,
+          subkey: randomStrings[ii]
+        });
       }
     }
 
-    Object.keys(testRandomFirstIndexes).forEach(function(key){
+    Object.keys(testRandomFirstIndexes).forEach(function (key) {
 
       var searchedItems = testSorted.search(key);
       expect(searchedItems.length).to.be(testRandomFirstIndexes[key]);
@@ -85,11 +91,11 @@ describe('wild-pare-func', function () {
     var removeAtKey;
     var removeAtSubkey;
 
-    Object.keys(testRandomFirstIndexes).every(function(key){
+    Object.keys(testRandomFirstIndexes).every(function (key) {
 
       var searchedItems = testSorted.search(key);
 
-      if (searchedItems.length > 1 && removeAllKey != null && removeAtKey == null){
+      if (searchedItems.length > 1 && removeAllKey != null && removeAtKey == null) {
         removeAt = searchedItems[0];
         removeAtKey = key;
         removeAtSubkey = searchedItems[0].subkey;
@@ -114,7 +120,11 @@ describe('wild-pare-func', function () {
 
     var foundAtCount = testSorted.search(removeAtKey).length;
 
-    var removeAtResult = testSorted.remove(removeAtKey, {'subkey':{$eq:removeAtSubkey}});
+    var removeAtResult = testSorted.remove(removeAtKey, {
+      'subkey': {
+        $eq: removeAtSubkey
+      }
+    });
 
     var foundAtCountAfterRemove = testSorted.search(removeAtKey).length;
 
@@ -198,26 +208,44 @@ describe('wild-pare-func', function () {
     var subscriptions = [];
 
     pareTree.__appendQueryRecipient({
-      key:'testKey',
-      subscriptions:[
-        {id:'testId1', data:{test:'data1'}}
-      ]
+      key: 'testKey',
+      subscriptions: [{
+        id: 'testId1',
+        data: {
+          test: 'data1'
+        }
+      }]
     }, '*/test/path', subscriptions, pareTree.SEGMENT_TYPE.WILDCARD_LEFT);
 
     pareTree.__appendQueryRecipient({
-      refCount:2,
-      key:'testKey',
-      subscriptions:[
-        {id:'testId2', data:{other:'data'}},
-        {id:'testId3', data:{different:'data'}}
+      refCount: 2,
+      key: 'testKey',
+      subscriptions: [{
+          id: 'testId2',
+          data: {
+            other: 'data'
+          }
+        },
+        {
+          id: 'testId3',
+          data: {
+            different: 'data'
+          }
+        }
       ]
-    },  '/test/path/*', subscriptions, pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
+    }, '/test/path/*', subscriptions, pareTree.SEGMENT_TYPE.WILDCARD_RIGHT);
 
     expect(subscriptions.length).to.be(3);
 
-    expect(subscriptions[0].data).to.eql({test:'data1'});
-    expect(subscriptions[1].data).to.eql({other:'data'});
-    expect(subscriptions[2].data).to.eql({different:'data'});
+    expect(subscriptions[0].data).to.eql({
+      test: 'data1'
+    });
+    expect(subscriptions[1].data).to.eql({
+      other: 'data'
+    });
+    expect(subscriptions[2].data).to.eql({
+      different: 'data'
+    });
 
     expect(subscriptions[0].key).to.be('testKey');
     expect(subscriptions[1].key).to.be('testKey');
@@ -238,13 +266,18 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-all-recipient';
 
-    pareTree.__addAll(segmented, {key:recipient, data:'test'});
+    pareTree.__addAll(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.ALL]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend({path:'*'}, recipients);
+    pareTree.__searchAndAppend({
+      path: '*'
+    }, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -262,13 +295,18 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-wildcard-left-recipient';
 
-    pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend({path:'test/a/wildcard/left'}, recipients);
+    pareTree.__searchAndAppend({
+      path: 'test/a/wildcard/left'
+    }, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -286,13 +324,18 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-wildcard-right-recipient';
 
-    pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend({path:'/a/wildcard/right/test'}, recipients);
+    pareTree.__searchAndAppend({
+      path: '/a/wildcard/right/test'
+    }, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -310,13 +353,18 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-wildcard-complex-recipient';
 
-    pareTree.__addSubscription(segmented, {key:recipient, data:'test-complex'});
+    pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test-complex'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend({path:'doing/a/wildcard/complex/test'}, recipients);
+    pareTree.__searchAndAppend({
+      path: 'doing/a/wildcard/complex/test'
+    }, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -335,13 +383,18 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-wildcard-left-recipient';
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend({path:'test/a/wildcard/left'}, recipients);
+    pareTree.__searchAndAppend({
+      path: 'test/a/wildcard/left'
+    }, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -365,13 +418,18 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-wildcard-right-recipient';
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend({path:'/a/wildcard/right/test'}, recipients);
+    pareTree.__searchAndAppend({
+      path: '/a/wildcard/right/test'
+    }, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -395,13 +453,18 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-wildcard-complex-recipient';
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test-complex'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test-complex'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
 
     var recipients = [];
 
-    pareTree.__searchAndAppend({path:'doing/a/wildcard/complex/test'}, recipients);
+    pareTree.__searchAndAppend({
+      path: 'doing/a/wildcard/complex/test'
+    }, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -426,7 +489,10 @@ describe('wild-pare-func', function () {
 
     var recipient = 'test-all-recipient';
 
-    var subscriptionReference = pareTree.__addAll(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addAll(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     var recipient1 = 'test-all-recipient1';
 
@@ -434,7 +500,9 @@ describe('wild-pare-func', function () {
 
     var recipients = [];
 
-    pareTree.__searchAndAppend({path:'*'}, recipients);
+    pareTree.__searchAndAppend({
+      path: '*'
+    }, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -453,13 +521,13 @@ describe('wild-pare-func', function () {
     done();
   });
 
-  it('tests the wildcard search matching, where * is nothing', function(done){
+  it('tests the wildcard search matching, where * is nothing', function (done) {
     var pareTree = new PareTree();
     expect(pareTree.__wildcardMatch('*te*st/mat', '*te*st*')).to.be(true);
     done();
   });
 
-  it('tests the wildcard search matching, where * take place of actual characters', function(done){
+  it('tests the wildcard search matching, where * take place of actual characters', function (done) {
 
     var pareTree = new PareTree();
 
@@ -519,9 +587,9 @@ describe('wild-pare-func', function () {
   //we create a bunch of subscriptions, then search using a wildcard
   //NB - this functionality makes permissions, and deep searching possible, ie: /wild/* and /wild/card/* in /wi*
 
-  it('tests doing a wildcard search, left left', function(done){
+  it('tests doing a wildcard search, left left', function (done) {
 
-    
+
     var pareTree = new PareTree();
 
     var segmented = pareTree.__segmentPath('*/a/wildcard/left');
@@ -530,9 +598,15 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
 
@@ -555,8 +629,8 @@ describe('wild-pare-func', function () {
     done();
   });
 
-  it('tests doing a wildcard search, left right', function(done){
-    
+  it('tests doing a wildcard search, left right', function (done) {
+
     var pareTree = new PareTree();
 
     var segmented = pareTree.__segmentPath('/a/wildcard/right/*');
@@ -565,9 +639,15 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
 
@@ -590,8 +670,8 @@ describe('wild-pare-func', function () {
     done();
   });
 
-  it('tests doing a wildcard search, left complex', function(done){
-    
+  it('tests doing a wildcard search, left complex', function (done) {
+
     var pareTree = new PareTree();
 
     var segmented = pareTree.__segmentPath('*/wildcard*complex/*');
@@ -600,9 +680,15 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
 
@@ -625,7 +711,7 @@ describe('wild-pare-func', function () {
     done();
   });
 
-  it('tests doing a wildcard search, left left', function(done){
+  it('tests doing a wildcard search, left left', function (done) {
 
 
     var pareTree = new PareTree();
@@ -636,9 +722,15 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
 
@@ -661,7 +753,7 @@ describe('wild-pare-func', function () {
     done();
   });
 
-  it('tests doing a wildcard search, left right', function(done){
+  it('tests doing a wildcard search, left right', function (done) {
 
     var pareTree = new PareTree();
 
@@ -671,9 +763,15 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
 
@@ -696,7 +794,7 @@ describe('wild-pare-func', function () {
     done();
   });
 
-  it('tests doing a wildcard search, left complex', function(done){
+  it('tests doing a wildcard search, left complex', function (done) {
 
     var pareTree = new PareTree();
 
@@ -706,9 +804,15 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
 
@@ -731,7 +835,7 @@ describe('wild-pare-func', function () {
     done();
   });
 
-  it('tests doing a wildcard search, right right', function(done){
+  it('tests doing a wildcard search, right right', function (done) {
 
 
     var pareTree = new PareTree();
@@ -742,9 +846,15 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_RIGHT]).to.be(1);
 
@@ -767,7 +877,7 @@ describe('wild-pare-func', function () {
     done();
   });
 
-  it('tests doing a wildcard search, right left', function(done){
+  it('tests doing a wildcard search, right left', function (done) {
 
     var pareTree = new PareTree();
 
@@ -777,9 +887,15 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_LEFT]).to.be(1);
 
@@ -802,7 +918,7 @@ describe('wild-pare-func', function () {
     done();
   });
 
-  it('tests doing a wildcard search, right complex', function(done){
+  it('tests doing a wildcard search, right complex', function (done) {
 
     var pareTree = new PareTree();
 
@@ -812,11 +928,20 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
 
@@ -840,7 +965,7 @@ describe('wild-pare-func', function () {
 
   });
 
-  it('tests doing a wildcard search, complex complex', function(done){
+  it('tests doing a wildcard search, complex complex', function (done) {
 
     var pareTree = new PareTree();
 
@@ -850,9 +975,15 @@ describe('wild-pare-func', function () {
 
     var segmentedDoNot = pareTree.__segmentPath('do/not/find');
 
-    pareTree.__addSubscription(segmentedDoNot, {key:recipient, data:'test'});
+    pareTree.__addSubscription(segmentedDoNot, {
+      key: recipient,
+      data: 'test'
+    });
 
-    var subscriptionReference = pareTree.__addSubscription(segmented, {key:recipient, data:'test'});
+    var subscriptionReference = pareTree.__addSubscription(segmented, {
+      key: recipient,
+      data: 'test'
+    });
 
     expect(pareTree.__counts[pareTree.SEGMENT_TYPE.WILDCARD_COMPLEX]).to.be(1);
 

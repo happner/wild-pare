@@ -7,12 +7,14 @@ var uniqid = new hyperid();
 var sift = require('sift');
 var SortedObjectArray = require("./lib/sorted-array");
 var Comedian = require('co-median');
+// var mmh3 = require('murmurhash3');
 
 PareTree.prototype.add = add;
 PareTree.prototype.search = search;
 PareTree.prototype.remove = remove;
 
 PareTree.prototype.__initialize = __initialize;
+PareTree.prototype.__preFilterArrays = __preFilterArrays;
 PareTree.prototype.__getTrunk = __getTrunk;
 PareTree.prototype.__addAll = __addAll;
 PareTree.prototype.__releaseId = __releaseId;
@@ -54,11 +56,16 @@ function PareTree(options) {
     max: 10000
   };
 
+  if (!this.options.preFilterCache) this.options.preFilterCache = {
+    max: 10000
+  }
+
   if (!this.options.wildcardCache) this.options.wildcardCache = {
     cache: 1000
   };
 
   this.__cache = new LRU(this.options.cache);
+  this.__preFilterCache = new LRU(this.options.__preFilterCache);
 
   this.__initialize();
 }
@@ -92,6 +99,8 @@ function add(path, recipient) {
 function search(path, options) {
   //[start:{"key":"search"}:start]
 
+  var _this = this;
+
   if (path == null || (path.replace && path.replace('*', '') == '')) path = '*';
 
   if (options == null) options = {};
@@ -101,29 +110,60 @@ function search(path, options) {
     path = path.path
   }
 
+  if (options.filter) {
+    options.postFilter = options.filter;
+    delete options.filter;
+  }
+
   //cache key is comprised of the path, and the options stringified,
   // so we dont cache something that has been filtered and then
   // do a search without a filter and get the filtered data
 
   var cacheKey = path + JSON.stringify(options);
-
+  var branches = this.__allBranches;
   var subscriptions = this.__cache.get(cacheKey);
 
   if (subscriptions != null) return subscriptions;
 
   else subscriptions = [];
 
+  if (options.preFilter) {
+
+    // TODO: consider hashing key (could get very long)
+    preFilterCacheKey = JSON.stringify(options.preFilter);
+
+    branches = this.__preFilterCache.get(preFilterCacheKey);
+
+    if (!branches) {
+
+      branches = this.__preFilterArrays(options.preFilter);
+
+      console.log('CREATED PRE FILTER', JSON.stringify(branches,null,2));
+
+    } else {
+
+      console.log('GOT PRE FILTER', branches);
+
+    }
+
+  }
+
   var searchPath = this.__segmentPath(path);
 
-  if ([this.SEGMENT_TYPE.WILDCARD_LEFT,
-      this.SEGMENT_TYPE.WILDCARD_RIGHT,
-      this.SEGMENT_TYPE.WILDCARD_COMPLEX
-    ].indexOf(searchPath.type) > -1)
+  if (searchPath.type == this.SEGMENT_TYPE.WILDCARD_LEFT ||
+    searchPath.type == this.SEGMENT_TYPE.WILDCARD_RIGHT ||
+    searchPath.type == this.SEGMENT_TYPE.WILDCARD_COMPLEX
+  ) {
     this.__wildcardSearchAndAppend(searchPath, subscriptions, options ? options.excludeAll : false);
-  else
+  } else {
     this.__searchAndAppend(searchPath, subscriptions, options ? options.excludeAll : false);
+  }
 
-  if (options.filter != null) subscriptions = sift(options.filter, subscriptions);
+  if (options.postFilter) {
+    console.log(subscriptions);
+  }
+
+  if (options.postFilter) subscriptions = sift(options.postFilter, subscriptions);
 
   if (options.decouple) subscriptions = this.__decouple(subscriptions);
 
@@ -179,6 +219,24 @@ function __initialize() {
 
   this.__comedian = new Comedian(this.options.wildcardCache);
 };
+
+
+function __preFilterArrays(filter) {
+  var _this = this;
+  var arrays = {};
+
+  Object.keys(this.SEGMENT_TYPE).forEach(function (typeName) {
+    var typeCode = _this.SEGMENT_TYPE[typeName];
+
+    if (!_this.__allBranches[typeCode]) return;
+
+    arrays[typeCode] = {
+      array: sift(filter, _this.__allBranches[typeCode].array())
+    };
+  });
+
+  return arrays;
+}
 
 
 function __getTrunk(pathInfo) {

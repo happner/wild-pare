@@ -246,9 +246,11 @@ describe('wild-pare-sanity', function () {
 
     queryResultsWildcard = subscriptionTree.search({
       path: '/a/subscription/path',
-      filter: {
+      filter: { // defaults to postFilter
         key: 'subscriber2'
-      }
+      },
+      // preFilter: {}, // acts on entire dataset before matching
+      // postFilter: {} // acts only on selected set after matching
     }); //only subscriber2's subscriptions
 
     //returns:

@@ -214,9 +214,16 @@ subscriptionRef1 = subscriptionTree.add('/a/subscription/path', {
   //   }
   // ]
 
-  //MONGO STYLE FILTERS:
+    //MONGO STYLE FILTERS:
 
-  queryResultsWildcard = subscriptionTree.search({path: '/a/subscription/path', filter: {key: 'subscriber2'}});//only subscriber2's subscriptions
+    queryResultsWildcard = subscriptionTree.search({
+      path: '/a/subscription/path',
+      filter: { // defaults to postFilter
+        key: 'subscriber2'
+      },
+      // preFilter: {}, // acts on entire dataset before matching
+      // postFilter: {} // acts only on selected set after matching
+    }); //only subscriber2's subscriptions
 
   //returns:
 
@@ -261,7 +268,6 @@ subscriptionRef1 = subscriptionTree.add('/a/subscription/path', {
   //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
   //   }
   // ]
-
 
 ```
 

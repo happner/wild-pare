@@ -201,7 +201,7 @@ describe('unit', function () {
 
   });
 
-  it('adds an all subscription', function (done) {
+  it('adds a left subscription', function (done) {
 
     var pareTree = new PareTree();
 
@@ -216,6 +216,8 @@ describe('unit', function () {
         }
       }]
     }, '*/test/path', subscriptions, pareTree.SEGMENT_TYPE.WILDCARD_LEFT);
+
+    //recipient, searchPath, appendTo, type, wildcard
 
     pareTree.__appendQueryRecipient({
       refCount: 2,
@@ -277,7 +279,7 @@ describe('unit', function () {
 
     pareTree.__searchAndAppend({
       path: '*'
-    }, recipients);
+    }, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -306,7 +308,7 @@ describe('unit', function () {
 
     pareTree.__searchAndAppend({
       path: 'test/a/wildcard/left'
-    }, recipients);
+    }, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -335,7 +337,7 @@ describe('unit', function () {
 
     pareTree.__searchAndAppend({
       path: '/a/wildcard/right/test'
-    }, recipients);
+    }, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -364,7 +366,7 @@ describe('unit', function () {
 
     pareTree.__searchAndAppend({
       path: 'doing/a/wildcard/complex/test'
-    }, recipients);
+    }, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -394,7 +396,7 @@ describe('unit', function () {
 
     pareTree.__searchAndAppend({
       path: 'test/a/wildcard/left'
-    }, recipients);
+    }, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -429,7 +431,7 @@ describe('unit', function () {
 
     pareTree.__searchAndAppend({
       path: '/a/wildcard/right/test'
-    }, recipients);
+    }, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -464,7 +466,7 @@ describe('unit', function () {
 
     pareTree.__searchAndAppend({
       path: 'doing/a/wildcard/complex/test'
-    }, recipients);
+    }, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -502,7 +504,7 @@ describe('unit', function () {
 
     pareTree.__searchAndAppend({
       path: '*'
-    }, recipients);
+    }, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -614,7 +616,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/left');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -655,7 +657,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/right/');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -696,7 +698,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/complex/is');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -738,7 +740,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/left');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -779,7 +781,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/right/');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -820,7 +822,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('*/wildcard/complex*');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -862,7 +864,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('/a/wildcard/right*');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -903,7 +905,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('wildcard/right*');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -949,7 +951,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('a/wildcard/complex*');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 
@@ -991,7 +993,7 @@ describe('unit', function () {
 
     var segmentedSearchPath = pareTree.__segmentPath('*/*/co*mplex*');
 
-    pareTree.__wildcardSearchAndAppend(segmentedSearchPath, recipients);
+    pareTree.__searchAndAppend(segmentedSearchPath, pareTree.__allBranches, recipients);
 
     expect(recipients.length).to.be(1);
 

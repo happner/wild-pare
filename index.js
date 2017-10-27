@@ -35,18 +35,15 @@ PareTree.prototype.__wildcardMatch = __wildcardMatch;
 PareTree.prototype.__decouple = __decouple;
 PareTree.prototype.__appendQueryRecipient = __appendQueryRecipient;
 PareTree.prototype.__appendRecipients = __appendRecipients;
-PareTree.prototype.__iterateAllBranches = __iterateAllBranches;
 PareTree.prototype.__iterateAll = __iterateAll;
-PareTree.prototype.__iteratePrecise = __iteratePrecise;
 PareTree.prototype.__permutate = __permutate;
 PareTree.prototype.__iterateBranches = __iterateBranches;
-PareTree.prototype.__iterateWildcard = __iterateWildcard;
-PareTree.prototype.__iterateWildcardSearch = __iterateWildcardSearch;
 PareTree.prototype.__endsWith = __endsWith;
 PareTree.prototype.__handleMatch = __handleMatch;
-PareTree.prototype.__wildcardSearchAndAppend = __wildcardSearchAndAppend;
 PareTree.prototype.__searchAndAppend = __searchAndAppend;
-
+PareTree.prototype.__getBranches = __getBranches;
+PareTree.prototype.__addBranches = __addBranches;
+PareTree.prototype.__preFilter = __preFilter;
 
 function PareTree(options) {
   this.options = options ? options : {};
@@ -92,13 +89,29 @@ function add(path, recipient) {
   if (pathInfo.type === this.SEGMENT_TYPE.ALL) return this.__addAll(pathInfo, recipient);
 
   else return this.__addSubscription(pathInfo, recipient);
-};
+}
 
+function __preFilter(branches, options) {
+
+  if (options.preFilter) {
+    // TODO: consider hashing key (could get very long)
+    var preFilterCacheKey = JSON.stringify(options.preFilter);
+
+    var filtered = this.__preFilterCache.get(preFilterCacheKey);
+
+    if (!filtered) {
+
+      filtered = this.__preFilterArrays(options.preFilter);
+
+      this.__preFilterCache.set(preFilterCacheKey, filtered);
+    }
+    return filtered;
+  }
+  return branches;
+}
 
 function search(path, options) {
   //[start:{"key":"search"}:start]
-
-  var _this = this;
 
   if (path == null || (path.replace && path.replace('*', '') == '')) path = '*';
 
@@ -119,44 +132,27 @@ function search(path, options) {
   // do a search without a filter and get the filtered data
 
   var cacheKey = path + JSON.stringify(options);
-  var branches = this.__allBranches;
+
+  var allBranches;
+
+  var filteredBranches;
+
   var subscriptions = this.__cache.get(cacheKey);
 
   if (subscriptions != null) return subscriptions;
 
   else subscriptions = [];
 
-  if (options.preFilter) {
-
-    // TODO: consider hashing key (could get very long)
-    preFilterCacheKey = JSON.stringify(options.preFilter);
-
-    branches = this.__preFilterCache.get(preFilterCacheKey);
-
-    if (!branches) {
-
-      branches = this.__preFilterArrays(options.preFilter);
-
-      console.log('CREATED PRE FILTER', JSON.stringify(branches, null, 2));
-
-    } else {
-
-      console.log('GOT PRE FILTER', branches);
-
-    }
-
-  }
-
   var searchPath = this.__segmentPath(path);
 
-  if (searchPath.type == this.SEGMENT_TYPE.WILDCARD_LEFT ||
-    searchPath.type == this.SEGMENT_TYPE.WILDCARD_RIGHT ||
-    searchPath.type == this.SEGMENT_TYPE.WILDCARD_COMPLEX
-  ) {
-    this.__wildcardSearchAndAppend(searchPath, branches, subscriptions, options ? options.excludeAll : false);
-  } else {
-    this.__searchAndAppend(searchPath, branches, subscriptions, options ? options.excludeAll : false);
-  }
+  if (searchPath.type == this.SEGMENT_TYPE.WILDCARD_LEFT || searchPath.type == this.SEGMENT_TYPE.WILDCARD_RIGHT || searchPath.type == this.SEGMENT_TYPE.WILDCARD_COMPLEX)
+    allBranches = this.__allBranches;
+  else
+    allBranches = this.__getBranches(searchPath);
+
+  filteredBranches = this.__preFilter(allBranches, options);
+
+  this.__searchAndAppend(searchPath, filteredBranches, subscriptions, options ? options.excludeAll : false);
 
   if (options.postFilter) subscriptions = sift(options.postFilter, subscriptions);
 
@@ -167,7 +163,7 @@ function search(path, options) {
   //[end:{"key":"search"}:end]
 
   return subscriptions;
-};
+}
 
 
 function remove(options) {
@@ -186,7 +182,7 @@ function remove(options) {
   else throw new Error('invalid remove options: ' + JSON.stringify(options));
 
   return removed;
-};
+}
 
 
 function __initialize() {
@@ -213,7 +209,7 @@ function __initialize() {
   this.__lowerBounds = {};
 
   this.__comedian = new Comedian(this.options.wildcardCache);
-};
+}
 
 
 function __preFilterArrays(filter) {
@@ -251,7 +247,7 @@ function __getTrunk(pathInfo) {
     return this.__trunkWildcardRight;
 
   return this.__trunkPrecise;
-};
+}
 
 
 function __addAll(pathInfo, recipient) {
@@ -283,14 +279,14 @@ function __addAll(pathInfo, recipient) {
   return {
     id: subscriptionId
   };
-};
+}
 
 
 function __releaseId(id) {
   var subscriptionData = this.__decodeId(id);
 
   this.__updateBounds(subscriptionData.type, -1, subscriptionData.path);
-};
+}
 
 
 function __decodeId(id) {
@@ -302,7 +298,7 @@ function __decodeId(id) {
     id: sections[2],
     path: sections.slice(3).join('')
   };
-};
+}
 
 
 function __createId(recipientKey, subscriptionType, path) {
@@ -311,7 +307,7 @@ function __createId(recipientKey, subscriptionType, path) {
   this.__updateBounds(subscriptionType, 1, path);
 
   return recipientKey + '&' + subscriptionType + '&' + id + '&' + path;
-};
+}
 
 
 function __getUpperBound(subscriptionType, trunk) {
@@ -326,7 +322,7 @@ function __getUpperBound(subscriptionType, trunk) {
   }
 
   return highest;
-};
+}
 
 
 function __getLowerBound(subscriptionType, trunk) {
@@ -341,10 +337,11 @@ function __getLowerBound(subscriptionType, trunk) {
   }
 
   return lowest;
-};
+}
 
 
 function __updateBounds(subscriptionType, count, path) {
+  
   this.__cache.reset();
 
   if (count == null) count = 1;
@@ -372,8 +369,7 @@ function __updateBounds(subscriptionType, count, path) {
       if (this.__lowerBounds[subscriptionType] === path.length) this.__lowerBounds[subscriptionType] = this.__getLowerBound(subscriptionType, trunk);
     }
   }
-};
-
+}
 
 function __addSubscription(pathInfo, recipient) {
   var trunk = this.__getTrunk(pathInfo);
@@ -439,10 +435,10 @@ function __addSubscription(pathInfo, recipient) {
   return {
     id: subscriptionId
   };
-};
-
+}
 
 function __configureWildcardSegment(segment) {
+
   segment.segmentPath = "";
   segment.segmentIndex = 0;
   segment.type = this.SEGMENT_TYPE.WILDCARD_COMPLEX;
@@ -459,10 +455,10 @@ function __configureWildcardSegment(segment) {
     if (segment.segmentIndex === 0 && segment.pathSegments[1] == '') segment.type = this.SEGMENT_TYPE.WILDCARD_RIGHT;
     if (segment.segmentIndex === 1 && segment.pathSegments[0] == '') segment.type = this.SEGMENT_TYPE.WILDCARD_LEFT;
   }
-};
-
+}
 
 function __segmentPath(path) {
+
   var segment = {
     type: this.SEGMENT_TYPE.PRECISE,
     segmentPath: path,
@@ -485,10 +481,10 @@ function __segmentPath(path) {
   }
 
   return segment;
-};
-
+}
 
 function __removeAllSubscriptionEntry(subscriptionData, subscriptionId) {
+
   var recipient = this.__trunkAll.recipients[subscriptionData.key];
 
   if (recipient == null) return null;
@@ -519,13 +515,11 @@ function __removeAllSubscriptionEntry(subscriptionData, subscriptionId) {
   });
 
   return removed;
-};
-
+}
 
 function __pruneAll(recipient, subscriptionData) {
   if (recipient.subscriptions.length == 0) delete this.__trunkAll.recipients[subscriptionData.key];
-};
-
+}
 
 function __prune(trunk, segment, branch, recipient, subscriptionData) {
   if (recipient.subscriptions.length == 0) delete branch.recipients[subscriptionData.key];
@@ -544,10 +538,10 @@ function __prune(trunk, segment, branch, recipient, subscriptionData) {
   }
 
   if (segment.branchCount <= 0) trunk.delete(subscriptionData.path.length);
-};
-
+}
 
 function __removeWildcardSubscriptionEntry(subscriptionData, trunk, subscriptionId) {
+
   var segment = trunk.search(subscriptionData.path.length)[0];
 
   if (segment == null) return null;
@@ -588,10 +582,10 @@ function __removeWildcardSubscriptionEntry(subscriptionData, trunk, subscription
   });
 
   return removed;
-};
-
+}
 
 function __removeSpecific(options) {
+
   var subscriptionData = this.__decodeId(options.id);
 
   if (subscriptionData == null) return null;
@@ -602,10 +596,10 @@ function __removeSpecific(options) {
     return this.__removeAllSubscriptionEntry(subscriptionData, options.id);
 
   return this.__removeWildcardSubscriptionEntry(subscriptionData, trunk, options.id);
-};
-
+}
 
 function __removeByPath(options) {
+
   var _this = this;
 
   var removed = [];
@@ -624,21 +618,18 @@ function __removeByPath(options) {
   });
 
   return removed;
-};
-
+}
 
 function __wildcardMatch(path1, path2) {
   return this.__comedian.matches(path1, path2);
-};
-
+}
 
 function __decouple(results) {
   return results.map(function (result) {
 
     return JSON.parse(JSON.stringify(result));
   });
-};
-
+}
 
 function __appendQueryRecipient(recipient, searchPath, appendTo, type, wildcard) {
   var _this = this;
@@ -658,7 +649,7 @@ function __appendQueryRecipient(recipient, searchPath, appendTo, type, wildcard)
   });
 
   //[end:{"key":"__appendQueryRecipient"}:end]
-};
+}
 
 
 function __appendRecipients(searchPath, branch, subscriptions, type, wildcard) {
@@ -674,54 +665,16 @@ function __appendRecipients(searchPath, branch, subscriptions, type, wildcard) {
   });
 
   //[end:{"key":"__appendRecipients"}:end]
-};
-
-
-function __iterateAllBranches(searchPath, branches, subscriptions, handler, type) {
-  if (branches[type])
-    branches[type].array(true).forEach(function (branch) {
-      handler(searchPath, branch, subscriptions, type);
-    });
-};
-
+}
 
 function __iterateAll(searchPath, subscriptions, handler) {
+
   if (this.__counts[this.SEGMENT_TYPE.ALL] == 0) return;
-
   handler(searchPath, this.__trunkAll, subscriptions, this.SEGMENT_TYPE.ALL);
-};
-
-
-function __iteratePrecise(searchPath, subscriptions, handler) {
-  if (this.__counts[this.SEGMENT_TYPE.PRECISE] == 0) return;
-
-  var _this = this;
-
-  if (searchPath.type === _this.SEGMENT_TYPE.ALL) {
-
-    for (var i = _this.__lowerBounds[_this.SEGMENT_TYPE.PRECISE]; i <= _this.__upperBounds[_this.SEGMENT_TYPE.PRECISE]; i++) {
-
-      _this.__trunkPrecise.search(i).forEach(function (segment) {
-
-        Object.keys(segment.branches).forEach(function (branchPath) {
-
-          handler(searchPath, segment.branches[branchPath], subscriptions, _this.SEGMENT_TYPE.PRECISE);
-        });
-      });
-    }
-    return;
-  }
-
-  _this.__trunkPrecise.search(searchPath.path.length).forEach(function (segment) {
-
-    segment.branches.search(searchPath.path).forEach(function (branch) {
-      handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.PRECISE);
-    });
-  });
-};
-
+}
 
 function __permutate(path, type) {
+
   var permutations = [];
 
   var permPath = path;
@@ -750,48 +703,55 @@ function __permutate(path, type) {
   }
 
   return permutations;
-};
+}
 
+function __addBranches(path, branches, type, trunk) {
 
-function __iterateBranches(path, subscriptions, handler, type, trunk) {
   trunk.search(path.length).forEach(function (segment) {
 
     segment.branches.search(path).forEach(function (branch) {
 
-      handler(path, branch, subscriptions, type);
+      if (!branches[type]) branches[type] = new SortedObjectArray('size');
+      branches[type].insert(branch);
     });
   });
-};
+}
 
 
-function __iterateWildcard(searchPath, subscriptions, handler) {
+function __getBranches(searchPath) {
+
   var _this = this;
 
+  var branches = {};
+
   _this.__permutate(searchPath.path, _this.SEGMENT_TYPE.WILDCARD_RIGHT).forEach(function (path) {
-    _this.__iterateBranches(path, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT, _this.__trunkWildcardRight);
+    _this.__addBranches(path, branches, _this.SEGMENT_TYPE.WILDCARD_RIGHT, _this.__trunkWildcardRight);
   });
 
   _this.__permutate(searchPath.path, _this.SEGMENT_TYPE.WILDCARD_LEFT).forEach(function (path) {
-    _this.__iterateBranches(path, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT, _this.__trunkWildcardLeft);
+    _this.__addBranches(path, branches, _this.SEGMENT_TYPE.WILDCARD_LEFT, _this.__trunkWildcardLeft);
   });
 
-  if (!_this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]) return;
+  _this.__addBranches(searchPath.path, branches, _this.SEGMENT_TYPE.PRECISE, _this.__trunkPrecise);
+
+  if (!_this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]) return branches;
 
   for (var i = 0; i <= searchPath.path.length; i++) {
 
     _this.__allBranches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX].search(i).forEach(function (branch) {
 
-      if (branch.path.length <= searchPath.path.length)
-        handler(searchPath, branch, subscriptions, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+      if (!branches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX]) branches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX] = new SortedObjectArray('size');
+      branches[_this.SEGMENT_TYPE.WILDCARD_COMPLEX].insert(branch);
     });
   }
-};
 
+  return branches;
+}
 
-function __iterateWildcardSearch(searchPath, branches, subscriptions, handler, type) {
+function __iterateBranches(searchPath, branches, subscriptions, handler, type) {
   var _this = this;
 
-  //[start:{"key":"__iterateWildcardSearch"}:start]
+  //[start:{"key":"__iterateBranches"}:start]
 
   if (!branches[type]) return;
 
@@ -801,9 +761,8 @@ function __iterateWildcardSearch(searchPath, branches, subscriptions, handler, t
     _this.__handleMatch(searchPath, branch, subscriptions, handler);
   });
 
-  //[end:{"key":"__iterateWildcardSearch"}:end]
-};
-
+  //[end:{"key":"__iterateBranches"}:end]
+}
 
 function __endsWith(str1, str2) {
   if (str1 == null ||
@@ -813,7 +772,7 @@ function __endsWith(str1, str2) {
     str2.length > str1.length) return false;
 
   return str1.substring(str1.length - str2.length) == str2;
-};
+}
 
 
 function __handleMatch(searchPath, branch, subscriptions, handler) {
@@ -828,44 +787,23 @@ function __handleMatch(searchPath, branch, subscriptions, handler) {
   handler(searchPath, branch, subscriptions, this.SEGMENT_TYPE.WILDCARD_COMPLEX);
 
   //[end:{"key":"__handleMatch"}:end]
-};
-
-
-function __wildcardSearchAndAppend(searchPath, branches, subscriptions, excludeAll) {
-  var _this = this;
-
-  //[start:{"key":"__wildcardSearchAndAppend"}:start]
-
-  var handler = _this.__appendRecipients.bind(_this);
-
-  _this.__iterateWildcardSearch(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT);
-  _this.__iterateWildcardSearch(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT);
-  _this.__iterateWildcardSearch(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
-  _this.__iterateWildcardSearch(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.PRECISE);
-
-  //_this.__iterateWildcardSearchPrecise(searchPath, subscriptions, handler);
-
-  if (!excludeAll) this.__iterateAll(searchPath, subscriptions, handler);
-
-  //[end:{"key":"__wildcardSearchAndAppend"}:end]
-};
+}
 
 
 function __searchAndAppend(searchPath, branches, subscriptions, excludeAll) {
-  var handler = this.__appendRecipients.bind(this);
 
-  if (searchPath.path === '*') {
+  var _this = this;
 
-    this.__iterateAllBranches(searchPath, branches, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_LEFT);
-    this.__iterateAllBranches(searchPath, branches, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_RIGHT);
-    this.__iterateAllBranches(searchPath, branches, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_COMPLEX);
-    this.__iterateAllBranches(searchPath, branches, subscriptions, handler, this.SEGMENT_TYPE.PRECISE);
+  //[start:{"key":"__searchAndAppend"}:start]
 
-  } else {
+  var handler = _this.__appendRecipients.bind(_this);
 
-    this.__iteratePrecise(searchPath, subscriptions, handler);
-    this.__iterateWildcard(searchPath, subscriptions, handler);
-  }
+  _this.__iterateBranches(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT);
+  _this.__iterateBranches(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT);
+  _this.__iterateBranches(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+  _this.__iterateBranches(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.PRECISE);
 
   if (!excludeAll) this.__iterateAll(searchPath, subscriptions, handler);
-};
+
+  //[end:{"key":"__searchAndAppend"}:end]
+}

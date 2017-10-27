@@ -7,7 +7,6 @@ var uniqid = new hyperid();
 var sift = require('sift');
 var SortedObjectArray = require("./lib/sorted-array");
 var Comedian = require('co-median');
-// var mmh3 = require('murmurhash3');
 
 PareTree.prototype.add = add;
 PareTree.prototype.search = search;
@@ -138,7 +137,7 @@ function search(path, options) {
 
       branches = this.__preFilterArrays(options.preFilter);
 
-      console.log('CREATED PRE FILTER', JSON.stringify(branches,null,2));
+      console.log('CREATED PRE FILTER', JSON.stringify(branches, null, 2));
 
     } else {
 
@@ -154,13 +153,9 @@ function search(path, options) {
     searchPath.type == this.SEGMENT_TYPE.WILDCARD_RIGHT ||
     searchPath.type == this.SEGMENT_TYPE.WILDCARD_COMPLEX
   ) {
-    this.__wildcardSearchAndAppend(searchPath, subscriptions, options ? options.excludeAll : false);
+    this.__wildcardSearchAndAppend(searchPath, branches, subscriptions, options ? options.excludeAll : false);
   } else {
-    this.__searchAndAppend(searchPath, subscriptions, options ? options.excludeAll : false);
-  }
-
-  if (options.postFilter) {
-    console.log(subscriptions);
+    this.__searchAndAppend(searchPath, branches, subscriptions, options ? options.excludeAll : false);
   }
 
   if (options.postFilter) subscriptions = sift(options.postFilter, subscriptions);
@@ -231,7 +226,10 @@ function __preFilterArrays(filter) {
     if (!_this.__allBranches[typeCode]) return;
 
     arrays[typeCode] = {
-      array: sift(filter, _this.__allBranches[typeCode].array())
+      _array: sift(filter, _this.__allBranches[typeCode].array()),
+      array: function () {
+        return this._array;
+      }
     };
   });
 
@@ -240,14 +238,17 @@ function __preFilterArrays(filter) {
 
 
 function __getTrunk(pathInfo) {
-  if (pathInfo.type === this.SEGMENT_TYPE.ALL) return this.__trunkAll;
+  if (pathInfo.type === this.SEGMENT_TYPE.ALL)
+    return this.__trunkAll;
 
-  if (pathInfo.type === this.SEGMENT_TYPE.WILDCARD_COMPLEX) return this.__trunkComplex;
+  if (pathInfo.type === this.SEGMENT_TYPE.WILDCARD_COMPLEX)
+    return this.__trunkComplex;
 
-  if (pathInfo.type === this.SEGMENT_TYPE.WILDCARD_LEFT) {
+  if (pathInfo.type === this.SEGMENT_TYPE.WILDCARD_LEFT)
     return this.__trunkWildcardLeft;
-  }
-  if (pathInfo.type === this.SEGMENT_TYPE.WILDCARD_RIGHT) return this.__trunkWildcardRight;
+
+  if (pathInfo.type === this.SEGMENT_TYPE.WILDCARD_RIGHT)
+    return this.__trunkWildcardRight;
 
   return this.__trunkPrecise;
 };
@@ -676,9 +677,9 @@ function __appendRecipients(searchPath, branch, subscriptions, type, wildcard) {
 };
 
 
-function __iterateAllBranches(searchPath, subscriptions, handler, type) {
-  if (this.__allBranches[type])
-    this.__allBranches[type].array(true).forEach(function (branch) {
+function __iterateAllBranches(searchPath, branches, subscriptions, handler, type) {
+  if (branches[type])
+    branches[type].array(true).forEach(function (branch) {
       handler(searchPath, branch, subscriptions, type);
     });
 };
@@ -787,14 +788,14 @@ function __iterateWildcard(searchPath, subscriptions, handler) {
 };
 
 
-function __iterateWildcardSearch(searchPath, subscriptions, handler, type) {
+function __iterateWildcardSearch(searchPath, branches, subscriptions, handler, type) {
   var _this = this;
 
   //[start:{"key":"__iterateWildcardSearch"}:start]
 
-  if (!_this.__allBranches[type]) return;
+  if (!branches[type]) return;
 
-  _this.__allBranches[type].array().forEach(function (branch) {
+  branches[type].array().forEach(function (branch) {
 
     //handler(searchPath, branch, subscriptions, type, true);
     _this.__handleMatch(searchPath, branch, subscriptions, handler);
@@ -830,17 +831,17 @@ function __handleMatch(searchPath, branch, subscriptions, handler) {
 };
 
 
-function __wildcardSearchAndAppend(searchPath, subscriptions, excludeAll) {
+function __wildcardSearchAndAppend(searchPath, branches, subscriptions, excludeAll) {
   var _this = this;
 
   //[start:{"key":"__wildcardSearchAndAppend"}:start]
 
   var handler = _this.__appendRecipients.bind(_this);
 
-  _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT);
-  _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT);
-  _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
-  _this.__iterateWildcardSearch(searchPath, subscriptions, handler, _this.SEGMENT_TYPE.PRECISE);
+  _this.__iterateWildcardSearch(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_LEFT);
+  _this.__iterateWildcardSearch(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_RIGHT);
+  _this.__iterateWildcardSearch(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+  _this.__iterateWildcardSearch(searchPath, branches, subscriptions, handler, _this.SEGMENT_TYPE.PRECISE);
 
   //_this.__iterateWildcardSearchPrecise(searchPath, subscriptions, handler);
 
@@ -850,23 +851,19 @@ function __wildcardSearchAndAppend(searchPath, subscriptions, excludeAll) {
 };
 
 
-function __searchAndAppend(searchPath, subscriptions, excludeAll) {
+function __searchAndAppend(searchPath, branches, subscriptions, excludeAll) {
   var handler = this.__appendRecipients.bind(this);
 
   if (searchPath.path === '*') {
 
-    this.__iterateAllBranches(searchPath, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_LEFT);
-
-    this.__iterateAllBranches(searchPath, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_RIGHT);
-
-    this.__iterateAllBranches(searchPath, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_COMPLEX);
-
-    this.__iterateAllBranches(searchPath, subscriptions, handler, this.SEGMENT_TYPE.PRECISE);
+    this.__iterateAllBranches(searchPath, branches, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_LEFT);
+    this.__iterateAllBranches(searchPath, branches, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_RIGHT);
+    this.__iterateAllBranches(searchPath, branches, subscriptions, handler, this.SEGMENT_TYPE.WILDCARD_COMPLEX);
+    this.__iterateAllBranches(searchPath, branches, subscriptions, handler, this.SEGMENT_TYPE.PRECISE);
 
   } else {
 
     this.__iteratePrecise(searchPath, subscriptions, handler);
-
     this.__iterateWildcard(searchPath, subscriptions, handler);
   }
 

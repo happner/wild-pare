@@ -1,4 +1,4 @@
-describe('wild-pare-perf', function () {
+describe('performance', function () {
 
   this.timeout(5000);
 

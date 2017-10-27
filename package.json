@@ -18,7 +18,6 @@
     "bluebird": "2.10.2",
     "co-median": "1.1.5",
     "lru-cache": "4.1.1",
-    "murmurhash3": "^0.4.0",
     "sift": "3.3.12",
     "sorted-object-array": "1.0.0",
     "uuid": "2.0.2"

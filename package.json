@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "async": "2.5.0",
-    "binary-search-tree": "0.2.6",
     "bluebird": "2.10.2",
     "co-median": "1.1.5",
     "lru-cache": "4.1.1",

@@ -25,64 +25,6 @@ describe('performance', function () {
 
   var CLIENT_COUNT = 10;
 
-  it('adds and verifies random precise subscriptions, non-wildcard query path', function (done) {
-
-    this.timeout(300000);
-
-    var subscriptions = random.randomPaths({
-      duplicate: DUPLICATE_KEYS,
-      count: SUBSCRIPTION_COUNT
-    });
-
-    var clients = random.string({
-      count: CLIENT_COUNT
-    });
-
-    var subscriptionTree = new PareTree();
-
-    var inserts = 0;
-
-    var searched = 0;
-
-    var startedInsert = Date.now();
-
-    subscriptions.forEach(function (subscriptionPath) {
-
-      clients.forEach(function (sessionId) {
-
-        subscriptionTree.add(subscriptionPath, {
-          key: sessionId,
-          data: {
-            test: "data"
-          }
-        });
-        inserts++;
-      });
-    });
-
-    var endedInsert = Date.now();
-
-    var startedSearches = Date.now();
-
-    var results = 0;
-
-    subscriptions.forEach(function (subscriptionPath) {
-
-      searched++;
-      results += subscriptionTree.search(subscriptionPath, null).length;
-    });
-
-    expect(results / (DUPLICATE_KEYS * CLIENT_COUNT)).to.be(subscriptions.length);
-
-    var endedSearches = Date.now();
-
-    testLog('did ' + inserts + ' precise inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
-
-    testLog('did ' + searched + ' precise searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
-
-    done();
-  });
-
   it('adds and verifies random wildcard subscriptions, non-wildcard query path', function (done) {
 
     this.timeout(300000);
@@ -117,6 +59,7 @@ describe('performance', function () {
           }
         });
         inserts++;
+        if (inserts % 1000 == 0) console.log(inserts + ' inserted.');
       });
     });
 
@@ -129,7 +72,7 @@ describe('performance', function () {
     subscriptions.forEach(function (subscriptionPath) {
 
       searched++;
-      results += subscriptionTree.search(subscriptionPath, null).length;
+      results += subscriptionTree.search(subscriptionPath, {decouple:true}).length;
     });
 
     expect(results / (DUPLICATE_KEYS * CLIENT_COUNT)).to.be(subscriptions.length);
@@ -143,8 +86,69 @@ describe('performance', function () {
     return done();
   });
 
+  it('adds and verifies random precise subscriptions, non-wildcard query path', function (done) {
 
-  var W_SUBSCRIPTION_COUNT = 100000;
+    this.timeout(300000);
+
+    var subscriptions = random.randomPaths({
+      duplicate: DUPLICATE_KEYS,
+      count: SUBSCRIPTION_COUNT
+    });
+
+    var clients = random.string({
+      count: CLIENT_COUNT
+    });
+
+    var subscriptionTree = new PareTree();
+
+    var inserts = 0;
+
+    var searched = 0;
+
+    var startedInsert = Date.now();
+
+    subscriptions.forEach(function (subscriptionPath) {
+
+      clients.forEach(function (sessionId) {
+
+        subscriptionTree.add(subscriptionPath, {
+          key: sessionId,
+          data: {
+            test: "data"
+          }
+        });
+        inserts++;
+        if (inserts % 1000 == 0) console.log(inserts + ' inserted.');
+      });
+    });
+
+    var endedInsert = Date.now();
+
+    var startedSearches = Date.now();
+
+    var results = 0;
+
+    subscriptions.forEach(function (subscriptionPath) {
+
+      searched++;
+      results += subscriptionTree.search(subscriptionPath, {decouple:true}).length;
+    });
+
+    expect(results / (DUPLICATE_KEYS * CLIENT_COUNT)).to.be(subscriptions.length);
+
+    var endedSearches = Date.now();
+
+    testLog('did ' + inserts + ' precise inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
+
+    testLog('did ' + searched + ' precise searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
+
+    done();
+  });
+
+
+
+
+  var W_SUBSCRIPTION_COUNT = 10000;
 
   it('tests the wildcard search matching, wildcard on both paths', function (done) {
 
@@ -166,17 +170,20 @@ describe('performance', function () {
 
     var started = Date.now();
 
-    subscriptions.every(function (subscription, subscriptionIndex) {
+    var errored = false;
+
+    subscriptions.forEach(function (subscription, subscriptionIndex) {
       if (!pareTree.__wildcardMatch(wildcardPaths1[subscriptionIndex], wildcardPaths2[subscriptionIndex])) {
-        done(new Error('expected a true'));
-        return false;
+        console.log('expected a true: ', wildcardPaths1[subscriptionIndex], wildcardPaths2[subscriptionIndex]);
+        errored = true;
       }
-      return true;
     });
 
     var completed = Date.now() - started;
 
     console.log('milliseconds:::', completed);
+
+    if (errored) return done(new Error('failed'));
 
     done();
   });
@@ -229,7 +236,11 @@ describe('performance', function () {
       count: CLIENT_COUNT
     });
 
-    var subscriptionTree = new PareTree();
+    var analyzer = require('happner-profane').create();
+
+    var WildPare =  analyzer.require('../index.js', true);
+
+    var subscriptionTree = new WildPare();
 
     var subscriptionResults = {};
 
@@ -271,7 +282,14 @@ describe('performance', function () {
 
     testLog('searched through ' + N_SUBSCRIPTION_COUNT * CLIENT_COUNT + ' subscriptions ' + SEARCHES + ' times, in ' + (endedSearches - startedSearches) + ' milliseconds');
 
+    var analysis = analyzer.getAnalysis();
+
+    console.log('analysis:::', analysis);
+
+    analyzer.cleanup();
+
     return done();
+
   });
 
   it('searches ' + N_SUBSCRIPTION_COUNT + ' subscriptions,' + SEARCHES + ' times, wildcard in search path', function (done) {

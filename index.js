@@ -347,7 +347,7 @@ function __appendRecipientsC(path, recipients){
   //[start:{"key":"__appendRecipientsC"}:start]
 
   this.__allRecipients.forEach(function(reference){
-    if (self.__wildcardMatch(path, reference.value.path)) recipients.push(reference.value);
+    if (self.__wildcardMatch(path, reference.path)) recipients.push(reference);
   });
 
   //[end:{"key":"__appendRecipientsC"}:end]

@@ -14,6 +14,17 @@ PareTree.prototype.__initialize = __initialize;
 PareTree.prototype.__segmentPath = __segmentPath;
 PareTree.prototype.__wildcardMatch = __wildcardMatch;
 PareTree.prototype.__decouple = __decouple;
+
+PareTree.prototype.__removeById = __removeById;
+PareTree.prototype.__removeByPath = __removeByPath;
+PareTree.prototype.__removeBySubscriberKey = __removeBySubscriberKey;
+PareTree.prototype.__removeByPathAndSubscriberKey = __removeByPathAndSubscriberKey;
+PareTree.prototype.__removeById = __removeById;
+PareTree.prototype.__pruneBranch = __pruneBranch;
+PareTree.prototype.__pruneAllRecipients = __pruneAllRecipients;
+PareTree.prototype.__pruneAllWildcardRecipients = __pruneAllWildcardRecipients;
+PareTree.prototype.__addAllRecipient = __addAllRecipient;
+
 PareTree.prototype.__clone = __clone;
 PareTree.prototype.__endsWith = __endsWith;
 PareTree.prototype.__largerEndsWith = __largerEndsWith;
@@ -68,6 +79,24 @@ PareTree.prototype.BRANCH = {
   WILDCARD_COMPLEX: 3
 };
 
+function __initialize() {
+
+  this.__cache.reset();
+
+  this.__trunk = Object.create({});
+
+  this.__trunk[this.BRANCH.WILDCARD_COMPLEX] = BinarySearchTree.create();
+
+  this.__trunk[this.BRANCH.WILDCARD_LEFT] = BinarySearchTree.create();
+
+  this.__trunk[this.BRANCH.WILDCARD_RIGHT] = BinarySearchTree.create();
+
+  this.__trunk[this.BRANCH.PRECISE] = BinarySearchTree.create();
+
+  this.__allRecipients = [];
+
+  this.__wildcardAllRecipients = [];
+}
 
 function add(path, recipient) {
 
@@ -79,7 +108,7 @@ function add(path, recipient) {
 
   var segment = this.__segmentPath(path);
 
-  if (segment.branch === this.BRANCH.ALL) return this.__wildcardAllRecipients.push(recipient);
+  if (segment.branch === this.BRANCH.ALL) return this.__addAllRecipient(recipient);
 
   return this.__addSubscription(path, segment, recipient);
 }
@@ -139,24 +168,218 @@ function search(path, options) {
 
 function remove(options) {
 
-  var removed = [];
-
   if (options == null) throw new Error('invalid remove options: options cannot be null');
 
   if (options.substring) options = {
     path: options
   };
 
-  if (options.id) {
+  if (options.id){
+    var removed = this.__removeById(options.id);
+    if (removed == null) return [];
+    return [removed];
+  }
 
-    var specific = this.__removeSpecific(options);
-    if (specific != null) removed.push(specific);
+  if (options.path && options.key) return this.__removeByPathAndSubscriberKey(options.path, options.key);
+
+  if (options.path) return this.__removeByPath(options.path);
+
+  if (options.key) return this.__removeBySubscriberKey(options.key);
+
+  throw new Error("invalid remove options: options must have a subscription 'id', subscriber 'key' or 'path' property");
+}
+
+function __addAllRecipient(recipient){
+
+  var reference = {id: uniqid(), data:recipient.data, key:recipient.key, path:'*'};
+
+  this.__wildcardAllRecipients.push(reference);
+
+  return reference;
+}
+
+function __pruneBranch(reference){
+
+  var self = this;
+
+  var branch = self.__trunk[reference.branch].search(reference.segment.length)[0];
+
+  if (!branch) return;
+
+  var branchSegment = branch.segments.search(reference.segment)[0];
+
+  if (!branchSegment) return;
+
+  var subscription = branchSegment.subscriptions.search(reference.path)[0];
+
+  if (!subscription) return;
+
+  var existingRecipient = subscription.recipients.search(reference.key)[0];
+
+  if (!existingRecipient) return;
+
+  var existingReference = existingRecipient.references.search(reference.id)[0];
+
+  if (existingReference) {
+
+    existingRecipient.references.delete(reference.id);
+
+    if (existingRecipient.references.allValues(false, true).length == 0){
+
+      subscription.recipients.delete(reference.key);
+
+      if (subscription.recipients.allValues(false, true).length == 0){
+
+        branchSegment.subscriptions.delete(reference.path);
+
+        if (branchSegment.subscriptions.allValues(false, true).length == 0){
+
+          branch.segments.delete(reference.segment);
+
+          if (branch.segments.allValues(false, true).length == 0){
+
+            self.__trunk[reference.branch].delete(reference.segment.length);
+          }
+        }
+      }
+    }
+  }
+}
+
+function __pruneAllRecipients(removeIndexes){
+
+  var self = this;
+
+  removeIndexes.reverse();
+
+  removeIndexes.forEach(function(removeAt){
+    self.__allRecipients.splice(removeAt, 1);
+  });
+}
+
+function __pruneAllWildcardRecipients(removeIndexes){
+
+  var self = this;
+
+  removeIndexes.reverse();
+
+  removeIndexes.forEach(function(removeAt){
+    self.__wildcardAllRecipients.splice(removeAt, 1);
+  });
+}
+
+function __removeById(id){
+
+  var self = this;
+
+  var removeIndex = -1;
+  var removed = null;
+
+  self.__allRecipients.every(function(reference, referenceIndex){
+
+    if (reference.id == id){
+
+      removeIndex = referenceIndex;
+
+      self.__pruneBranch(reference);
+
+      removed = reference;
+
+      return false;//found what we were looking for, moving on
+    }
+    return true;
+  });
+
+  if (removed) {
+
+    self.__pruneAllRecipients([removeIndex]);
+    self.__cache.reset();
     return removed;
   }
 
-  else if (options.path) return this.__removeByPath(options);
+  self.__wildcardAllRecipients.every(function(reference, referenceIndex){
 
-  else throw new Error('invalid remove options: ' + JSON.stringify(options));
+    if (reference.id == id){
+
+      removeIndex = referenceIndex;
+
+      removed = reference;
+
+      return false;//found what we were looking for, moving on
+    }
+    return true;
+  });
+
+  if (removed){
+    self.__pruneAllWildcardRecipients([removeIndex]);
+    self.__cache.reset();
+  }
+
+  return removed;
+}
+
+function __removeBySubscriberKey(key){
+
+  var self = this;
+
+  var removeIndexes = [];
+  var removed = [];
+
+  self.__allRecipients.forEach(function(reference, referenceIndex){
+
+    if (reference.key == key){
+
+      removeIndexes.push(referenceIndex);
+
+      self.__pruneBranch(reference);
+
+      removed.push(reference);
+    }
+  });
+
+  if (!removed.length) return [];
+
+  self.__pruneAllRecipients(removeIndexes);
+
+  self.__cache.reset();
+
+  return removed;
+}
+
+function __removeByPath(path){
+
+  var self = this;
+
+  var removed = [];
+
+  var options = {};
+
+  if (path != '*') options.excludeAll = true;
+
+  self.search(path, options).forEach(function(reference){
+
+    removed.push(self.__removeById(reference.id));
+  });
+
+  self.__cache.reset();
+
+  return removed;
+}
+
+function __removeByPathAndSubscriberKey(path, key){
+
+  var self = this;
+
+  var removed = [];
+
+  self.search(path, {filter:{key:key}, excludeAll:true}).forEach(function(reference){
+
+    removed.push(self.__removeById(reference.id));
+  });
+
+  self.__cache.reset();
+
+  return removed;
 }
 
 function __initialize() {
@@ -173,9 +396,9 @@ function __initialize() {
 
   this.__trunk[this.BRANCH.PRECISE] = BinarySearchTree.create();
 
-  this.__allRecipients = new Array();
+  this.__allRecipients = [];
 
-  this.__wildcardAllRecipients = new Array();
+  this.__wildcardAllRecipients = [];
 }
 
 function __addSubscription(path, segment, recipient) {
@@ -228,7 +451,7 @@ function __addSubscription(path, segment, recipient) {
     subscription.recipients.insert(recipient.key, existingRecipient);
   }
 
-  var reference = {id: uniqid(), data:recipient.data, key:recipient.key, path:path};
+  var reference = {id: uniqid(), data:recipient.data, key:recipient.key, path:path, segment:segment.key, branch:segment.branch};
 
   existingRecipient.references.insert(reference.id, reference);
 
@@ -536,7 +759,7 @@ function __appendReferences(branchSegment, recipients){
     subscription.value.recipients.allValues(false, true).forEach(function(recipient){
 
       recipient.value.references.allValues(false, true).forEach(function(reference){
-        recipients.push(reference);
+        recipients.push(reference.value);
       });
     });
   });
@@ -567,15 +790,14 @@ function __segmentPath(path) {
 
     else {
 
-      if (segment.pathRightEnd == '*' && segment.pathLeftEnd != '*') {
+      if (segment.pathRightEnd == '*') {//test*
         segment.branch = this.BRANCH.WILDCARD_RIGHT;
         segment.key = pathSegments[pathSegments.length - 2];
       }
-
-      if (segment.pathRightEnd != '*' && segment.pathLeftEnd == '*') {
+      else if (segment.pathLeftEnd == '*') {//*test
         segment.branch = this.BRANCH.WILDCARD_LEFT;
         segment.key = pathSegments[1];
-      }
+      } else segment.branch = this.BRANCH.WILDCARD_COMPLEX;//te*st
     }
   }
   return segment;
@@ -583,13 +805,12 @@ function __segmentPath(path) {
 
 function __largerEndsWith(str1, str2){
 
-  return ((str1 <= str2 && this.__endsWith(str2, str1)) || (str1 > str2 && this.__endsWith(str1, str2)))
+  return ((str1 <= str2 && this.__endsWith(str2, str1)) || (str1 > str2 && this.__endsWith(str1, str2)));
 }
 
 function __largerStartsWith(str1, str2){
 
-  return ((str1 <= str2 && str2.indexOf(str1) == 0) ||
-    (str1 > str2 && str1.indexOf(str2) == 0))
+  return ((str1 <= str2 && str2.indexOf(str1) == 0) || (str1 > str2 && str1.indexOf(str2) == 0));
 }
 
 function __wildcardMatch(path1, path2) {

@@ -342,4 +342,163 @@ describe('unit', function () {
     return done();
   });
 
+  it('tests removing subscriptions by id', function (done) {
+
+    var pareTree = new PareTree();
+
+    pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+
+    var toRemoveRef = pareTree.add('test', {key:'testKey2', data:{test:'data'}});
+
+    var found = pareTree.search('test');
+
+    expect(found.length).to.be(2);
+
+    expect(pareTree.remove(toRemoveRef).length).to.be(1);
+
+    found = pareTree.search('test');
+
+    expect(found.length).to.be(1);
+
+    done();
+
+  });
+
+  it('tests removing subscriptions by none-wild-card path', function (done) {
+
+      var pareTree = new PareTree();
+
+      pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+
+      pareTree.add('test1', {key:'testKey2', data:{test:'data'}});
+
+      var found = pareTree.search('test');
+
+      expect(found.length).to.be(1);
+
+      expect(pareTree.remove('test1').length).to.be(1);
+
+      found = pareTree.search('test*');
+
+      expect(found.length).to.be(1);
+
+      done();
+  });
+
+  it('tests removing subscriptions by wild-card path', function (done) {
+
+    var pareTree = new PareTree();
+
+    pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+
+    pareTree.add('test1', {key:'testKey2', data:{test:'data'}});
+
+    var found = pareTree.search('test*');
+
+    expect(found.length).to.be(2);
+
+    expect(pareTree.remove('test*').length).to.be(2);
+
+    found = pareTree.search('test*');
+
+    expect(found.length).to.be(0);
+
+    done();
+  });
+
+  it('tests removing subscriptions by subscriber', function (done) {
+
+    var pareTree = new PareTree();
+
+    pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+
+    pareTree.add('test', {key:'testKey2', data:{test:'data'}});
+
+    pareTree.add('test', {key:'testKey3', data:{test:'data'}});
+
+    var found = pareTree.search('tes*');
+
+    expect(found.length).to.be(3);
+
+    expect(pareTree.remove({key:'testKey3'}).length).to.be(1);
+
+    found = pareTree.search('tes*');
+
+    expect(found.length).to.be(2);
+
+    done();
+  });
+
+  it('tests removing subscriptions by path and subscriber', function (done) {
+
+    var pareTree = new PareTree();
+
+    pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+
+    pareTree.add('test1', {key:'testKey2', data:{test:'data'}});
+
+    pareTree.add('test', {key:'testKey3', data:{test:'data'}});
+
+    pareTree.add('test1', {key:'testKey3', data:{test:'data'}});
+
+    var found = pareTree.search('tes*');
+
+    expect(found.length).to.be(4);
+
+    expect(pareTree.remove({key:'testKey3', path:'test1'}).length).to.be(1);
+
+    found = pareTree.search('tes*');
+
+    expect(found.length).to.be(3);
+
+    done();
+
+  });
+
+  it('tests filtering a search for subscriptions', function (done) {
+
+    var pareTree = new PareTree();
+
+    pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+
+    pareTree.add('test1', {key:'testKey2', data:{test:'data'}});
+
+    pareTree.add('test', {key:'testKey3', data:{test:'data'}});
+
+    pareTree.add('test1', {key:'testKey3', data:{test:'data'}});
+
+    var found = pareTree.search('te*', {filter:{key:'testKey3'}});
+
+    expect(found.length).to.be(2);
+
+    found = pareTree.search('te*');
+
+    expect(found.length).to.be(4);
+
+    done();
+  });
+
+  it('tests filtering a search for subscriptions', function (done) {
+
+    var pareTree = new PareTree();
+
+    pareTree.add('short/*/test/complex', {
+      key: 'subkey1',
+      data: {
+        test: 4
+      }
+    });
+
+    pareTree.search('short/*/test/complex');
+
+    expect(pareTree.__wildcardMatch('short/*/test/complex', 'short/and/test/complex')).to.be(true);
+
+    var found = pareTree.search('short/and/test/complex');
+
+    expect(found.length).to.be(1);
+
+    done();
+
+  });
+
 });

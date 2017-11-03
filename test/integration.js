@@ -25,294 +25,6 @@ describe('integration', function () {
 
   var CLIENT_COUNT = 5;
 
-  it('clearly demonstrates how the tree works, doing an add (precise and wild), remove, search and filter', function (done) {
-
-    var PareTree = require('..'); //require('wild-pare');
-
-    var subscriptionTree = new PareTree();
-
-    //ADD PRECISE SUBSCRIPTIONS:
-
-    subscriptionRef1 = subscriptionTree.add('/a/subscription/path', {
-      key: 'subscriber1',
-      data: {
-        some: {
-          custom: "data"
-        },
-        value: 12
-      }
-    });
-
-    //returns:
-
-    // {
-    //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
-    // }
-
-    var queryResults1 = subscriptionTree.search('/a/subscription/path'); //or subscriptionTree.search({path:'/a/precise/subscription'})
-
-    // console.log('queryResults:::');
-    // console.log(JSON.stringify(queryResults1, null, 2));
-
-
-    //returns a single subscription:
-
-    // [
-    //   {
-    //     "key": "subscriber1",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 12
-    //     },
-    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
-    //   }
-    // ]
-
-
-    //add another subscription to the same path but with different data:
-
-    var subscriptionRef2 = subscriptionTree.add('/a/subscription/path', {
-      key: 'subscriber1',
-      data: {
-        some: {
-          custom: "data"
-        },
-        value: 6
-      }
-    });
-
-    //returns:
-
-    // {
-    //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-    // }
-
-
-    // console.log('EXAMPLE3:::');
-    // console.log(JSON.stringify(subscriptionRef2, null, 2));
-
-    //query the tree:
-
-    var queryResults2 = subscriptionTree.search('/a/subscription/path'); //or subscriptionTree.search({path:'/a/subscription/path'})
-
-    // console.log('queryResults2:::');
-    // console.log(JSON.stringify(queryResults2, null, 2));
-
-    //returns our subscriptions:
-
-    // [
-    //   {
-    //     "key": "subscriber1",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 12
-    //     },
-    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
-    //   },
-    //   {
-    //     "key": "subscriber1",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 6
-    //     },
-    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-    //   }
-    // ]
-
-    //REMOVE SUBSCRIPTIONS:
-
-    //remove a subscription, returns array containing subscription ids removed in {id:[id]} objects:
-
-    var removalResult = subscriptionTree.remove(subscriptionRef1); // or subscriptionTree.remove({id:subscriptionReference.id}) or subscriptionTree.remove(subscriptionReference.recipient.path)
-
-    //returns a reference to our first subscription:
-
-    // [
-    //   {
-    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
-    //   }
-    // ]
-
-    // console.log('EXAMPLE5:::');
-    // console.log(JSON.stringify(removalResult, null, 2));
-
-    //we do a search again, our first subscription is no longer there
-
-    var queryResultsRemove = subscriptionTree.search('/a/subscription/path'); //or subscriptionTree.search({path:'/a/subscription/path'})
-
-    //returns:
-
-    // [
-    //   {
-    //     "key": "subscriber1",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 6
-    //     },
-    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-    //   }
-    // ]
-
-    // console.log('queryResultsRemove:::');
-    // console.log(JSON.stringify(queryResultsRemove, null, 2));
-
-    //you can also remove all subscriptions matching a path, regardless of what subscriber:
-    // ie: subscriptionTree.remove('/a/subscription/*');
-
-    //ADD WILDCARD SUBSCRIPTIONS:
-
-    //add a wildcard subscription, wildcards are the * character - wildcards allow for any amount of text, so the following are valid wildcard paths:
-    // /a/wildcard/subscription/* or */wildcard/subscription* or */wildcard* or */wildcard*/subscription/*
-    // and would all return for a search that looks like this: /a/subscription/path
-
-    //right wildcard:
-
-    var wildcardRightRef = subscriptionTree.add('/a/subscription/*', {
-      key: 'subscriber2',
-      data: {
-        some: {
-          custom: "data"
-        },
-        value: 5
-      }
-    });
-
-    //left wildcard:
-
-    var wildcardLeftRef = subscriptionTree.add('*/subscription/path', {
-      key: 'subscriber3',
-      data: {
-        some: {
-          custom: "data"
-        },
-        value: 15
-      }
-    });
-
-    //we now query our list, and should get 3 subscriptions returned,
-    //as the wildcards match up and the subscriptionRef2 subscription also matches our search path:
-
-    var queryResultsWildcard = subscriptionTree.search({
-      path: '/a/subscription/path'
-    });
-
-    //returns:
-
-    // [
-    //   {
-    //     "key": "subscriber1",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 6
-    //     },
-    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-    //   },
-    //   {
-    //     "key": "subscriber2",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 5
-    //     },
-    //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
-    //   },
-    //   {
-    //     "key": "subscriber3",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 15
-    //     },
-    //     "id": "subscriber3&1&D7R8LYFvSRCTAP5s88Uonw/3&/subscription/path"
-    //   }
-    // ]
-
-    // console.log('EXAMPLE6:::');
-    // console.log(JSON.stringify(queryResultsWildcard, null, 2));
-
-    //MONGO STYLE FILTERS:
-
-    queryResultsWildcard = subscriptionTree.search({
-      path: '/a/subscription/path',
-      filter: { // defaults to postFilter
-        key: 'subscriber2'
-      },
-      // preFilter: {}, // acts on entire dataset before matching
-      // postFilter: {} // acts only on selected set after matching
-    }); //only subscriber2's subscriptions
-
-    //returns:
-
-    // [
-    //   {
-    //     "key": "subscriber2",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 5
-    //     },
-    //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
-    //   }
-    // ]
-
-    // console.log('EXAMPLE7:::');
-    // console.log(JSON.stringify(queryResultsWildcard, null, 2));
-
-    //filtering by the subscription data, using an $lte operator:
-
-    queryResultsWildcard = subscriptionTree.search({
-      path: '/a/subscription/path',
-      filter: {
-        "data.value": {
-          $lte: 10
-        }
-      }
-    }); //only subscriptions with a data.value less than 10
-
-    //returns:
-
-    // [
-    //   {
-    //     "key": "subscriber1",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 6
-    //     },
-    //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-    //   },
-    //   {
-    //     "key": "subscriber2",
-    //     "data": {
-    //       "some": {
-    //         "custom": "data"
-    //       },
-    //       "value": 5
-    //     },
-    //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
-    //   }
-    // ]
-
-    // console.log('EXAMPLE8:::');
-    // console.log(JSON.stringify(queryResultsWildcard, null, 2));
-
-    done();
-  });
-
   it('sense checks subscriptions and their attendant queries, by adding searching and removing', function (done) {
 
     this.timeout(300000);
@@ -499,8 +211,6 @@ describe('integration', function () {
 
     expect(searchResults['a/test/left'][0].data.test).to.be(2);
 
-    //console.log(JSON.stringify(searchResults['short/and/test/complex'], null, 2));
-
     expect(searchResults['short/and/test/complex'].length).to.be(5);
 
     expect(searchResults['short/and/test/complex'][0].data.test).to.be(4);
@@ -521,14 +231,17 @@ describe('integration', function () {
 
     expect(searchResults['short/andtest/right/and/short'][0].data.test).to.be(8);
 
+    //short/*test/right/*/short
     subscriptionTree.remove(testRef1);
 
     expect(subscriptionTree.search('short/andtest/right/and/short').length).to.be(3);
 
     expect(searchResults['/precise/double'].length).to.be(5);
 
-
     debugger;
+
+    expect(subscriptionTree.search('/precise/double').length).to.be(5);
+
     subscriptionTree.remove('/precise/double');
 
     expect(subscriptionTree.search('/precise/double').length).to.be(3);
@@ -691,7 +404,7 @@ describe('integration', function () {
 
     });
 
-    it('can pre-filter', function (done) {
+    xit('can pre-filter', function (done) {
 
       /*
 

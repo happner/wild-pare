@@ -83,6 +83,12 @@ describe('performance', function () {
 
     testLog('did ' + searched + ' wildcard searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
 
+    var perMillisecond = searched / (endedSearches - startedSearches);
+
+    testLog(perMillisecond + ' per millisecond');
+
+    testLog(perMillisecond * 1000 + ' per second');
+
     return done();
   });
 
@@ -142,13 +148,17 @@ describe('performance', function () {
 
     testLog('did ' + searched + ' precise searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
 
+    var perMillisecond = searched / (endedSearches - startedSearches);
+
+    testLog(perMillisecond + ' per millisecond');
+
+    testLog(perMillisecond * 1000 + ' per second');
+
     done();
   });
 
 
-
-
-  var W_SUBSCRIPTION_COUNT = 10000;
+  var W_SUBSCRIPTION_COUNT = 50000;
 
   it('tests the wildcard search matching, wildcard on both paths', function (done) {
 
@@ -173,6 +183,7 @@ describe('performance', function () {
     var errored = false;
 
     subscriptions.forEach(function (subscription, subscriptionIndex) {
+      //console.log('matching:::', wildcardPaths1[subscriptionIndex], wildcardPaths2[subscriptionIndex]);
       if (!pareTree.__wildcardMatch(wildcardPaths1[subscriptionIndex], wildcardPaths2[subscriptionIndex])) {
         console.log('expected a true: ', wildcardPaths1[subscriptionIndex], wildcardPaths2[subscriptionIndex]);
         errored = true;
@@ -184,6 +195,144 @@ describe('performance', function () {
     console.log('milliseconds:::', completed);
 
     if (errored) return done(new Error('failed'));
+
+    done();
+  });
+
+  it('adds, verifies and removes by path random precise subscriptions', function (done) {
+
+    this.timeout(300000);
+
+    var subscriptions = random.randomPaths({
+      count: SUBSCRIPTION_COUNT
+    });
+
+    var clients = random.string({
+      count: CLIENT_COUNT
+    });
+
+    var subscriptionTree = new PareTree();
+
+    var inserts = 0;
+
+    var searched = 0;
+
+    var startedInsert = Date.now();
+
+    subscriptions.forEach(function (subscriptionPath) {
+
+      clients.forEach(function (sessionId) {
+
+        subscriptionTree.add(subscriptionPath, {
+          key: sessionId,
+          data: {
+            test: "data"
+          }
+        });
+        inserts++;
+        if (inserts % 1000 == 0) console.log(inserts + ' inserted.');
+      });
+    });
+
+    var endedInsert = Date.now();
+
+    var startedRemoves = Date.now();
+
+    var results = 0;
+
+    subscriptions.forEach(function (subscriptionPath) {
+
+      searched++;
+      //console.log('removing:::', subscriptionPath);
+      var result = subscriptionTree.remove(subscriptionPath).length;
+      //console.log('result:::', result);
+
+      results += result;
+    });
+
+    expect(results / CLIENT_COUNT).to.be(subscriptions.length);
+
+    var endedRemoves = Date.now();
+
+    testLog('did ' + inserts + ' precise inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
+
+    testLog('did ' + searched + ' precise removes in ' + (endedRemoves - startedRemoves) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
+
+    var perMillisecond = searched / (endedRemoves - startedRemoves);
+
+    testLog(perMillisecond + ' per millisecond');
+
+    testLog(perMillisecond * 1000 + ' per second');
+
+    done();
+  });
+
+  it('adds, verifies and removes by id random precise subscriptions', function (done) {
+
+    this.timeout(300000);
+
+    var subscriptions = random.randomPaths({
+      count: SUBSCRIPTION_COUNT
+    });
+
+    var clients = random.string({
+      count: CLIENT_COUNT
+    });
+
+    var subscriptionTree = new PareTree();
+
+    var inserts = 0;
+
+    var searched = 0;
+
+    var startedInsert = Date.now();
+
+    var toRemove = [];
+
+    subscriptions.forEach(function (subscriptionPath) {
+
+      clients.forEach(function (sessionId) {
+
+        toRemove.push(subscriptionTree.add(subscriptionPath, {
+          key: sessionId,
+          data: {
+            test: "data"
+          }
+        }));
+        inserts++;
+        if (inserts % 1000 == 0) console.log(inserts + ' inserted.');
+      });
+    });
+
+    var endedInsert = Date.now();
+
+    var startedRemoves = Date.now();
+
+    var results = 0;
+
+    toRemove.forEach(function (reference) {
+
+      searched++;
+      //console.log('removing:::', subscriptionPath);
+      var result = subscriptionTree.remove(reference).length;
+      //console.log('result:::', result);
+
+      results += result;
+    });
+
+    expect(results / CLIENT_COUNT).to.be(subscriptions.length);
+
+    var endedRemoves = Date.now();
+
+    testLog('did ' + inserts + ' precise inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
+
+    testLog('did ' + searched + ' precise removes in ' + (endedRemoves - startedRemoves) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
+
+    var perMillisecond = searched / (endedRemoves - startedRemoves);
+
+    testLog(perMillisecond + ' per millisecond');
+
+    testLog(perMillisecond * 1000 + ' per second');
 
     done();
   });
@@ -205,6 +354,7 @@ describe('performance', function () {
     var started = Date.now();
 
     subscriptions.every(function (subscription, subscriptionIndex) {
+      //console.log('matching:::', wildcards[subscriptionIndex], subscription);
       if (!pareTree.__wildcardMatch(wildcards[subscriptionIndex], subscription)) {
         done(new Error('expected a true'));
         return false;

@@ -4,7 +4,8 @@ var LRU = require("lru-cache");
 var BinarySearchTree = require('./lib/binary-search-tree');
 var uniqid = require('./lib/id').create();
 var sift = require('sift');
-var Comedian = require('co-median');
+var micromatch = require('micromatch');
+var isGlob = require('is-glob');
 
 PareTree.prototype.add = add;
 PareTree.prototype.search = search;
@@ -26,26 +27,10 @@ PareTree.prototype.__pruneAllWildcardRecipients = __pruneAllWildcardRecipients;
 PareTree.prototype.__addAllRecipient = __addAllRecipient;
 
 PareTree.prototype.__clone = __clone;
-PareTree.prototype.__endsWith = __endsWith;
-PareTree.prototype.__largerEndsWith = __largerEndsWith;
-PareTree.prototype.__largerStartsWith = __largerStartsWith;
 PareTree.prototype.__addSubscription = __addSubscription;
+PareTree.prototype.__checkPath = __checkPath;
 
 PareTree.prototype.__appendRecipients = __appendRecipients;
-
-PareTree.prototype.__appendRecipientsBC = __appendRecipientsBC;
-
-PareTree.prototype.__appendRecipientsC = __appendRecipientsC;
-
-PareTree.prototype.__appendRecipientsLL = __appendRecipientsLL;
-PareTree.prototype.__appendRecipientsLR = __appendRecipientsLR;
-PareTree.prototype.__appendRecipientsLP = __appendRecipientsLP;
-
-PareTree.prototype.__appendRecipientsRR = __appendRecipientsRR;
-PareTree.prototype.__appendRecipientsRL = __appendRecipientsRL;
-PareTree.prototype.__appendRecipientsRP = __appendRecipientsRP;
-
-PareTree.prototype.__appendRecipientsPL = __appendRecipientsPL;
 PareTree.prototype.__appendRecipientsPR = __appendRecipientsPR;
 PareTree.prototype.__appendRecipientsPP = __appendRecipientsPP;
 
@@ -65,8 +50,6 @@ function PareTree(options) {
 
   this.__cache = new LRU(this.options.cache);
 
-  this.__comedian = new Comedian(this.options.wildcardCache);
-
   this.__initialize();
 }
 
@@ -74,31 +57,33 @@ function PareTree(options) {
 PareTree.prototype.BRANCH = {
   ALL: -1,
   PRECISE: 0,
-  WILDCARD_LEFT: 1,
-  WILDCARD_RIGHT: 2,
-  WILDCARD_COMPLEX: 3
+  WILDCARD: 1
 };
 
-function __initialize() {
+function __checkPath(path){
 
-  this.__cache.reset();
+  if (path == null) throw new Error('path cannot be null');
 
-  this.__trunk = Object.create({});
+  var stripped = '';
 
-  this.__trunk[this.BRANCH.WILDCARD_COMPLEX] = BinarySearchTree.create();
+  var lastChar = null;
 
-  this.__trunk[this.BRANCH.WILDCARD_LEFT] = BinarySearchTree.create();
+  for (var i = 0; i < path.length; i++) {
 
-  this.__trunk[this.BRANCH.WILDCARD_RIGHT] = BinarySearchTree.create();
+    if (path[i] == '*' && lastChar == '*') continue;
 
-  this.__trunk[this.BRANCH.PRECISE] = BinarySearchTree.create();
+    stripped += path[i];
 
-  this.__allRecipients = [];
+    lastChar = path[i];
+  }
 
-  this.__wildcardAllRecipients = [];
+  //no */test/paths
+  if (stripped[0] == '*' && stripped.length > 1) throw new Error('path can only have right hand sided wildcards, only /test/**, not **/test');
 }
 
 function add(path, recipient) {
+
+  this.__checkPath(path);
 
   if (recipient == null) throw new Error('no recipient for subscription');
 
@@ -115,6 +100,10 @@ function add(path, recipient) {
 
 function search(path, options) {
   //[start:{"key":"search"}:start]
+
+  if (!options) options = {};
+
+  if (!options.exact && isGlob(path)) throw new Error('glob searches are not allowed unless options.exact is true (globs are ignored both sides)');
 
   if (options == null) options = {};
 
@@ -142,14 +131,7 @@ function search(path, options) {
 
   var segment = this.__segmentPath(path);
 
-  if (segment.branch == this.BRANCH.WILDCARD_COMPLEX) this.__appendRecipientsC(path, recipients);
-  else {
-
-    this.__appendRecipients(segment, this.BRANCH.WILDCARD_LEFT, recipients);
-    this.__appendRecipients(segment, this.BRANCH.WILDCARD_RIGHT, recipients);
-    this.__appendRecipients(segment, this.BRANCH.WILDCARD_COMPLEX, recipients);
-    this.__appendRecipients(segment, this.BRANCH.PRECISE, recipients);
-  }
+  this.__appendRecipients(segment, recipients, options.exact);
 
   if (!options.excludeAll) this.__wildcardAllRecipients.forEach(function(allRecipient){
     recipients.push(allRecipient);
@@ -294,6 +276,7 @@ function __removeById(id){
 
     self.__pruneAllRecipients([removeIndex]);
     self.__cache.reset();
+
     return removed;
   }
 
@@ -352,7 +335,7 @@ function __removeByPath(path){
 
   var removed = [];
 
-  var options = {};
+  var options = {exact:path};
 
   if (path != '*') options.excludeAll = true;
 
@@ -372,7 +355,9 @@ function __removeByPathAndSubscriberKey(path, key){
 
   var removed = [];
 
-  self.search(path, {filter:{key:key}, excludeAll:true}).forEach(function(reference){
+  var options = {filter:{key:key}, excludeAll:true, exact:path};
+
+  self.search(path, options).forEach(function(reference){
 
     removed.push(self.__removeById(reference.id));
   });
@@ -388,11 +373,7 @@ function __initialize() {
 
   this.__trunk = Object.create({});
 
-  this.__trunk[this.BRANCH.WILDCARD_COMPLEX] = BinarySearchTree.create();
-
-  this.__trunk[this.BRANCH.WILDCARD_LEFT] = BinarySearchTree.create();
-
-  this.__trunk[this.BRANCH.WILDCARD_RIGHT] = BinarySearchTree.create();
+  this.__trunk[this.BRANCH.WILDCARD] = BinarySearchTree.create();
 
   this.__trunk[this.BRANCH.PRECISE] = BinarySearchTree.create();
 
@@ -462,269 +443,30 @@ function __addSubscription(path, segment, recipient) {
   return reference;
 }
 
-function __appendRecipients(segment, branchType, recipients){
+function __appendRecipients(segment, recipients, exact){
 
   //[start:{"key":"__appendRecipients"}:start]
 
-  switch (segment.branch){
+  this.__appendRecipientsPR(segment, recipients, exact);
 
-    case this.BRANCH.WILDCARD_LEFT:
-
-      switch (branchType) {
-
-        case this.BRANCH.WILDCARD_LEFT:
-          return this.__appendRecipientsLL(segment, recipients);
-
-        case this.BRANCH.WILDCARD_RIGHT:
-          return this.__appendRecipientsLR(segment, recipients);
-
-        case this.BRANCH.PRECISE:
-          return this.__appendRecipientsLP(segment, recipients);
-
-        case this.BRANCH.WILDCARD_COMPLEX:
-          return this.__appendRecipientsBC(this.BRANCH.WILDCARD_LEFT, segment, recipients);
-
-      } break;
-
-    case this.BRANCH.WILDCARD_RIGHT:
-
-      switch (branchType) {
-
-        case this.BRANCH.WILDCARD_LEFT:
-          return this.__appendRecipientsRL(segment, recipients);
-
-        case this.BRANCH.WILDCARD_RIGHT:
-          return this.__appendRecipientsRR(segment, recipients);
-
-        case this.BRANCH.PRECISE:
-          return this.__appendRecipientsRP(segment, recipients);
-
-        case this.BRANCH.WILDCARD_COMPLEX:
-          return this.__appendRecipientsBC(this.BRANCH.WILDCARD_RIGHT, segment, recipients);
-
-      } break;
-
-    case this.BRANCH.PRECISE:
-
-      switch (branchType) {
-
-        case this.BRANCH.WILDCARD_LEFT:
-          return this.__appendRecipientsPL(segment, recipients);
-
-        case this.BRANCH.WILDCARD_RIGHT:
-          return this.__appendRecipientsPR(segment, recipients);
-
-        case this.BRANCH.PRECISE:
-          return this.__appendRecipientsPP(segment, recipients);
-
-        case this.BRANCH.WILDCARD_COMPLEX:
-          return this.__appendRecipientsBC(this.BRANCH.PRECISE, segment, recipients);
-
-      } break;
-  }
+  this.__appendRecipientsPP(segment, recipients);
 
   //[end:{"key":"__appendRecipients"}:end]
 }
 
-function __endsWith(str1, str2) {
-
-  if (str1 == null ||
-    str2 == null ||
-    str1.substring == null ||
-    str2.substring == null ||
-    str2.length > str1.length) return false;
-
-  return str1.substring(str1.length - str2.length) == str2;
-}
-
-//loops through a specified branch type, does complex matches to segment
-function __appendRecipientsBC(branchType, segment, recipients){
-
-  var self = this;
-
-  //[start:{"key":"__appendRecipientsBC"}:start]
-
-  this.__trunk[self.BRANCH.WILDCARD_COMPLEX].allValues(false, true).forEach(function(branch){
-
-    branch.value.segments.allValues(false, true).forEach(function(branchSegment){
-
-      var segmentPath = segment.key;
-
-      if (branchType == self.BRANCH.WILDCARD_LEFT) segmentPath = '*' + segmentPath;
-
-      if (branchType == self.BRANCH.WILDCARD_RIGHT) segmentPath = segmentPath + '*';
-
-      if (!self.__wildcardMatch(segmentPath, branchSegment.value.key)) return;
-
-      self.__appendReferences(branchSegment.value, recipients);
-    });
-  });
-
-  //[end:{"key":"__appendRecipientsBC"}:end]
-}
-
-function __appendRecipientsC(path, recipients){
-
-  var self = this;
-
-  //[start:{"key":"__appendRecipientsC"}:start]
-
-  this.__allRecipients.forEach(function(reference){
-    if (self.__wildcardMatch(path, reference.path)) recipients.push(reference);
-  });
-
-  //[end:{"key":"__appendRecipientsC"}:end]
-}
-
-// *test *est
-function __appendRecipientsLL(segment, recipients){
-
-  var self = this;
-
-  //[start:{"key":"__appendRecipientsLL"}:start]
-
-  this.__trunk[this.BRANCH.WILDCARD_LEFT].allValues().forEach(function(branch){
-
-    branch.segments.allValues(false, true).forEach(function(branchSegment){
-
-      if (!self.__largerEndsWith(branchSegment.value.key, segment.key)) return;
-
-      self.__appendReferences(branchSegment.value, recipients);
-    });
-  });
-
-  //[end:{"key":"__appendRecipientsLL"}:end]
-}
-
-// *testi blahtest*
-function __appendRecipientsLR(segment, recipients){
-
-  var self = this;
-
-  //[start:{"key":"__appendRecipientsLR"}:start]
-
-  this.__trunk[this.BRANCH.WILDCARD_RIGHT].allValues().forEach(function(branch){
-
-    branch.segments.allValues(false, true).forEach(function(branchSegment){
-
-      if (!self.__wildcardMatch(branchSegment.value.key + '*', segment.path)) return;
-
-      self.__appendReferences(branchSegment.value, recipients);
-    });
-  });
-
-  //[end:{"key":"__appendRecipientsLR"}:end]
-}
-
-// ie: *test blahtest
-function __appendRecipientsLP(segment, recipients){
-
-  var self = this;
-
-  //[start:{"key":"__appendRecipientsLP"}:start]
-
-  this.__trunk[this.BRANCH.PRECISE].betweenBounds({ $gte: segment.key.length}).forEach(function(branch){
-
-    branch.segments.allValues(false, true).forEach(function(branchSegment){
-
-      if (!self.__endsWith(branchSegment.value.key, segment.key)) return;
-
-      self.__appendReferences(branchSegment.value, recipients);
-    });
-  });
-
-  //[end:{"key":"__appendRecipientsLP"}:end]
-}
-
-function __appendRecipientsRL(segment, recipients){
-
-  var self = this;
-
-  //[start:{"key":"__appendRecipientsRL"}:start]
-
-  this.__trunk[this.BRANCH.WILDCARD_LEFT].allValues().forEach(function(branch){
-
-    branch.segments.allValues(false, true).forEach(function(branchSegment){
-
-      if (!self.__wildcardMatch('*' + branchSegment.value.key, segment.path)) return;
-
-      self.__appendReferences(branchSegment.value, recipients);
-    });
-  });
-
-  //[end:{"key":"__appendRecipientsRL"}:end]
-}
-
-function __appendRecipientsRR(segment, recipients){
-
-  var self = this;
-
-  //[start:{"key":"__appendRecipientsRR"}:start]
-
-  this.__trunk[this.BRANCH.WILDCARD_RIGHT].allValues().forEach(function(branch){
-
-    branch.segments.allValues(false, true).forEach(function(branchSegment){
-
-      if (!self.__largerStartsWith(branchSegment.value.key, segment.key)) return;
-
-      self.__appendReferences(branchSegment.value, recipients);
-    });
-  });
-
-  //[end:{"key":"__appendRecipientsRR"}:end]
-}
-
-function __appendRecipientsRP(segment, recipients){
-
-  var self = this;
-
-  //[start:{"key":"__appendRecipientsRP"}:start]
-
-  this.__trunk[this.BRANCH.PRECISE].betweenBounds({ $gte: segment.key.length}).forEach(function(branch){
-
-    branch.segments.allValues(false, true).forEach(function(branchSegment){
-
-      if (branchSegment.value.key.indexOf(segment.key) != 0) return;
-
-      self.__appendReferences(branchSegment.value, recipients);
-    });
-  });
-
-  //[end:{"key":"__appendRecipientsRP"}:end]
-}
-
-function __appendRecipientsPL(segment, recipients){
-
-  var self = this;
-
-  //[start:{"key":"__appendRecipientsPL"}:start]
-
-  this.__trunk[this.BRANCH.WILDCARD_LEFT].betweenBounds({ $lte: segment.path.length}).forEach(function(branch){
-
-    branch.segments.allValues(false, true).forEach(function(branchSegment){
-
-      if (!self.__endsWith(segment.path, branchSegment.value.key)) return;
-
-      self.__appendReferences(branchSegment.value, recipients);
-    });
-  });
-
-  //[end:{"key":"__appendRecipientsPL"}:end]
-}
-
-function __appendRecipientsPR(segment, recipients){
+function __appendRecipientsPR(segment, recipients, exact){
 
   var self = this;
 
   //[start:{"key":"__appendRecipientsPR"}:start]
 
-  this.__trunk[this.BRANCH.WILDCARD_RIGHT].betweenBounds({ $lte: segment.path.length }).forEach(function(branch){
+  this.__trunk[this.BRANCH.WILDCARD].betweenBounds({ $lte: segment.path.length }).forEach(function(branch){
 
     branch.segments.allValues(false, true).forEach(function(branchSegment){
 
       if (segment.path.indexOf(branchSegment.value.key) != 0) return;
 
-      self.__appendReferences(branchSegment.value, recipients);
+      self.__appendReferences(branchSegment.value, recipients, segment.path, exact);
     });
   });
 
@@ -750,15 +492,20 @@ function __appendRecipientsPP(segment, recipients){
   //[end:{"key":"__appendRecipientsPP"}:end]
 }
 
-function __appendReferences(branchSegment, recipients){
+function __appendReferences(branchSegment, recipients, matchTo, exact){
 
   //[start:{"key":"__appendReferences"}:start]
+
+  var self = this;
 
   branchSegment.subscriptions.allValues(false, true).forEach(function(subscription){
 
     subscription.value.recipients.allValues(false, true).forEach(function(recipient){
 
       recipient.value.references.allValues(false, true).forEach(function(reference){
+        //console.log('matchTo:::', matchTo, reference);
+        if (exact && reference.value.path != exact) return;
+        if (matchTo && !self.__wildcardMatch(matchTo, reference.value.path)) return;
         recipients.push(reference.value);
       });
     });
@@ -786,51 +533,24 @@ function __segmentPath(path) {
 
     if (segment.wildcardIndex === -1) return segment; //a precise segment
 
-    if (pathSegments.length > 2) segment.branch = this.BRANCH.WILDCARD_COMPLEX;
-
-    else {
-
-      if (segment.pathRightEnd == '*') {//test*
-        segment.branch = this.BRANCH.WILDCARD_RIGHT;
-        segment.key = pathSegments[pathSegments.length - 2];
-      }
-      else if (segment.pathLeftEnd == '*') {//*test
-        segment.branch = this.BRANCH.WILDCARD_LEFT;
-        segment.key = pathSegments[1];
-      } else segment.branch = this.BRANCH.WILDCARD_COMPLEX;//te*st
-    }
+    segment.branch = this.BRANCH.WILDCARD;
+    segment.key = pathSegments[0];
   }
   return segment;
 }
 
-function __largerEndsWith(str1, str2){
-
-  return ((str1 <= str2 && this.__endsWith(str2, str1)) || (str1 > str2 && this.__endsWith(str1, str2)));
-}
-
-function __largerStartsWith(str1, str2){
-
-  return ((str1 <= str2 && str2.indexOf(str1) == 0) || (str1 > str2 && str1.indexOf(str2) == 0));
-}
-
-function __wildcardMatch(path1, path2) {
+function __wildcardMatch(str, pattern) {
 
   //[start:{"key":"__wildcardMatch"}:start]
 
-  var match = this.__comedian.matches(path1, path2);
+  return micromatch.isMatch(str, pattern);
 
   //[end:{"key":"__wildcardMatch"}:end]
-
-  return match;
 }
 
 function __decouple(results) {
 
-  var self = this;
-
-  return results.map(function (result) {
-    return self.__clone(result);
-  });
+  return this.__clone(results);
 }
 
 function __clone(obj){

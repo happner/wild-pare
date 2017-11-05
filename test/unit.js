@@ -27,73 +27,7 @@ describe('unit', function () {
     done();
   });
 
-  it('tests adding and finding a complex subscription', function (done) {
-    var pareTree = new PareTree();
-
-    pareTree.add('*test/*', {key:'testKey1', data:{test:'data'}});
-
-    expect(pareTree.search('*test/*').length).to.be(1);
-
-    done();
-  });
-
-  it('tests adding and finding a LL subscription', function (done) {
-    var pareTree = new PareTree();
-
-    pareTree.add('*test/', {key:'testKey1', data:{test:'data'}});
-
-    expect(pareTree.search('*test/').length).to.be(1);
-
-    done();
-  });
-
-  it('tests adding and finding a LR subscription', function (done) {
-    var pareTree = new PareTree();
-
-    pareTree.add('test/*', {key:'testKey1', data:{test:'data'}});
-
-    expect(pareTree.search('*test/').length).to.be(1);
-
-    done();
-  });
-
-  it('tests adding and finding a LP subscription', function (done) {
-    var pareTree = new PareTree();
-
-    pareTree.add('test/', {key:'testKey1', data:{test:'data'}});
-
-    expect(pareTree.search('*est/').length).to.be(1);
-
-    done();
-  });
-
-  it('tests adding and finding a RL subscription', function (done) {
-
-    var pareTree = new PareTree();
-
-    pareTree.add('*test/', {key:'testKey1', data:{test:'data'}});
-
-    pareTree.add('precise', {key:'testKey1', data:{test:'data'}});
-
-    expect(pareTree.search('tes*').length).to.be(1);
-
-    done();
-  });
-
-  it('tests adding and finding a RR subscription', function (done) {
-
-    var pareTree = new PareTree();
-
-    pareTree.add('test/*', {key:'testKey1', data:{test:'data'}});
-
-    pareTree.add('precise', {key:'testKey1', data:{test:'data'}});
-
-    expect(pareTree.search('tes*').length).to.be(1);
-
-    done();
-  });
-
-  it('tests adding and finding a RP subscription', function (done) {
+  it('tests fails attempting a glob search', function (done) {
 
     var pareTree = new PareTree();
 
@@ -101,22 +35,12 @@ describe('unit', function () {
 
     pareTree.add('precise', {key:'testKey1', data:{test:'data'}});
 
-    expect(pareTree.search('tes*').length).to.be(1);
-
-    done();
-  });
-
-  it('tests adding and finding a PL subscription', function (done) {
-
-    var pareTree = new PareTree();
-
-    pareTree.add('*test', {key:'testKey1', data:{test:'data'}});
-
-    pareTree.add('precise', {key:'testKey1', data:{test:'data'}});
-
-    expect(pareTree.search('precisetest').length).to.be(1);
-
-    done();
+    try{
+      pareTree.search('test*');
+    }catch(e){
+      expect(e.toString()).to.be('Error: glob searches are not allowed unless options.exact is true (globs are ignored both sides)');
+      done();
+    }
   });
 
   it('tests adding and finding a PR subscription', function (done) {
@@ -150,14 +74,12 @@ describe('unit', function () {
     var pareTree = new PareTree();
 
     pareTree.add('test/*', {key:'testKey1', data:{test:'data'}});
-    pareTree.add('*test/', {key:'testKey1', data:{test:'data'}});
-    pareTree.add('*test/*', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('test/', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('tes*/**', {key:'testKey1', data:{test:'data'}});
     pareTree.add('test/', {key:'testKey1', data:{test:'data'}});
 
-    expect(pareTree.search('test/*').length).to.be(4);
-    expect(pareTree.search('*test/').length).to.be(4);
-    expect(pareTree.search('*test/*').length).to.be(4);
-    expect(pareTree.search('test/').length).to.be(4);
+    expect(pareTree.search('test/1').length).to.be(2);
+    expect(pareTree.search('tester/').length).to.be(1);
 
     done();
   });
@@ -166,180 +88,21 @@ describe('unit', function () {
 
     var pareTree = new PareTree();
 
-    expect(pareTree.__wildcardMatch('/test*', '*/test')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/complex/*/short', '/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/complex/*', '/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/*/*/short', '/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test*', '/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('*/short', '/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test*/short', '/test/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/complex/*/short', '/test/complex/and/long')).to.be(false);
-    expect(pareTree.__wildcardMatch('/test/complex/*', '/blah/complex/and/short')).to.be(false);
-    expect(pareTree.__wildcardMatch('/test/*/*/short', '/test/complex/and/long')).to.be(false);
-    expect(pareTree.__wildcardMatch('/test*', '/tes/complex/and/short')).to.be(false);
-    expect(pareTree.__wildcardMatch('*/short', '/test/complex/and/long')).to.be(false);
-    expect(pareTree.__wildcardMatch('/test*/short', '/test/complex/and/short/')).to.be(false);
-    expect(pareTree.__wildcardMatch('*hort', '/short*')).to.be(true);
-    expect(pareTree.__wildcardMatch('*hort', '*/complex/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('*hort', '*/complex/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('*/short', '*/complex/and/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/complex/*', '/test/comp*')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test*', '*test/com*')).to.be(true);
-    expect(pareTree.__wildcardMatch('Nykqt0EWubC74J*', '*0EWubC74')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/1', '/te*/*')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/match', '/test/mat*')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/and/short','/test/complex/*/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/and/short','/test/complex/**')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/and/short', '/test/*/*/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/and/short', '/test/**')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/and/short','/test/**/short')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/complex/and/long','/test/complex/*/short', )).to.be(false);
+    expect(pareTree.__wildcardMatch('/blah/complex/and/short', '/test/complex/*')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test/complex/and/long', '/test/*/*/short')).to.be(false);
+    expect(pareTree.__wildcardMatch('/tes/complex/and/short', '/test*')).to.be(false);
+    expect(pareTree.__wildcardMatch('/test/complex/and/short/', '/test/**/short*')).to.be(true);
+    expect(pareTree.__wildcardMatch('/test/comp/**', '/test/**')).to.be(true);
 
     done();
-  });
-
-  it('tests the sorted object array', function (done) {
-
-    var SortedObjectArray = require("../lib/sorted-array");
-
-    var testSorted = new SortedObjectArray('size');
-
-    var testRandomFirstIndexes = {};
-
-    var index = 0;
-
-    var TESTCOUNT = 20;
-
-    var RANDOM_MAX = 10;
-
-    for (var i = 0; i < TESTCOUNT; i++) {
-
-      var last = random.integer(1, RANDOM_MAX);
-
-      for (var ii = 0; ii < last; ii++) {
-
-        var randomStrings = random.string({
-          length: 20,
-          count: last
-        });
-
-        index++;
-
-        if (ii == 0) testRandomFirstIndexes[i] = last;
-
-        testSorted.insert({
-          size: i,
-          subkey: randomStrings[ii]
-        });
-      }
-    }
-
-    Object.keys(testRandomFirstIndexes).forEach(function (key) {
-
-      var searchedItems = testSorted.search(key);
-      expect(searchedItems.length).to.be(testRandomFirstIndexes[key]);
-    });
-
-    var removeAllKey;
-    var removeAtKey;
-    var removeAtSubkey;
-
-    Object.keys(testRandomFirstIndexes).every(function (key) {
-
-      var searchedItems = testSorted.search(key);
-
-      if (searchedItems.length > 1 && removeAllKey != null && removeAtKey == null) {
-        removeAt = searchedItems[0];
-        removeAtKey = key;
-        removeAtSubkey = searchedItems[0].subkey;
-        return false;
-      }
-      if (searchedItems.length > 1 && removeAllKey == undefined && key != removeAtKey) {
-        removeAllKey = key;
-      }
-      return true;
-    });
-
-
-    var foundAll = testSorted.search(removeAllKey);
-
-    expect(foundAll.length > 0).to.be(true);
-
-    var removeAllResult = testSorted.remove(removeAllKey);
-
-    var foundAll = testSorted.search(removeAllKey);
-
-    expect(foundAll.length).to.be(0);
-
-    var foundAtCount = testSorted.search(removeAtKey).length;
-
-    var removeAtResult = testSorted.remove(removeAtKey, {
-      'subkey': {
-        $eq: removeAtSubkey
-      }
-    });
-
-    var foundAtCountAfterRemove = testSorted.search(removeAtKey).length;
-
-    expect(foundAtCount - 1).to.be(foundAtCountAfterRemove);
-
-    done();
-
-  });
-
-  it('tests the wildcard search matching, where * is nothing', function (done) {
-    var pareTree = new PareTree();
-    expect(pareTree.__wildcardMatch('*te*st/mat', '*te*st*')).to.be(true);
-    done();
-  });
-
-  it('tests the wildcard search matching, where * take place of actual characters', function (done) {
-
-    var pareTree = new PareTree();
-
-    expect(pareTree.__wildcardMatch('*', '*te*st*')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('*test/mat', '*te*st*')).to.be(true);
-    //
-    expect(pareTree.__wildcardMatch('*te*st*', '*test/mat')).to.be(true);
-    //
-    expect(pareTree.__wildcardMatch('*te*s*t*', '*test/mat')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('*e*ma*', '*test/mat')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('*i*g1', '*str*ing*')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('*ing1', '*ring*')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('*ing', 'test/long string*')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('test/long string*', '*st*ing')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('test/lo*', 'test/long string*')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('*/test/match', '*st*')).to.be(true);
-    //left left
-    expect(pareTree.__wildcardMatch('*/test/match', '*st/match')).to.be(true);
-    //right right
-    expect(pareTree.__wildcardMatch('/test/match*', '/test/match/*')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('/test/ma*', '*tes*/ma*')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('*test/match', '/test/mat*')).to.be(true);
-
-    expect(pareTree.__wildcardMatch('/test/match*', '/blah/match/*')).to.be(false);
-    //right left
-    expect(pareTree.__wildcardMatch('/test/mat*', '*test/match')).to.be(true);
-    //precise left
-    expect(pareTree.__wildcardMatch('*test/match', '/test/match')).to.be(true);
-    //precise right
-    expect(pareTree.__wildcardMatch('/test/mat*', '/test/match')).to.be(true);
-    //left left
-    expect(pareTree.__wildcardMatch('*/test/match', '*st/blah')).to.be(false);
-    //left right
-    expect(pareTree.__wildcardMatch('*test/match', '/test/mar*')).to.be(false);
-    //right left
-    expect(pareTree.__wildcardMatch('/test/mat*', '*test/march')).to.be(false);
-    //precise left
-    expect(pareTree.__wildcardMatch('*test/match', '/test/ma*rch')).to.be(false);
-    //precise right
-    expect(pareTree.__wildcardMatch('/test/mat*', '*test/march')).to.be(false);
-
-    expect(pareTree.__wildcardMatch('*test/mat', '*pe*st*')).to.be(false);
-
-    return done();
   });
 
   it('tests removing subscriptions by id', function (done) {
@@ -368,17 +131,17 @@ describe('unit', function () {
 
       var pareTree = new PareTree();
 
-      pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+      pareTree.add('test1', {key:'testKey1', data:{test:'data'}});
 
-      pareTree.add('test1', {key:'testKey2', data:{test:'data'}});
+      pareTree.add('tes*', {key:'testKey2', data:{test:'data'}});
 
-      var found = pareTree.search('test');
+      var found = pareTree.search('test1');
 
-      expect(found.length).to.be(1);
+      expect(found.length).to.be(2);
 
       expect(pareTree.remove('test1').length).to.be(1);
 
-      found = pareTree.search('test*');
+      found = pareTree.search('test');
 
       expect(found.length).to.be(1);
 
@@ -391,17 +154,17 @@ describe('unit', function () {
 
     pareTree.add('test', {key:'testKey1', data:{test:'data'}});
 
-    pareTree.add('test1', {key:'testKey2', data:{test:'data'}});
+    pareTree.add('tes*', {key:'testKey2', data:{test:'data'}});
 
-    var found = pareTree.search('test*');
+    var found = pareTree.search('test');
 
     expect(found.length).to.be(2);
 
-    expect(pareTree.remove('test*').length).to.be(2);
+    expect(pareTree.remove('tes*').length).to.be(1);
 
-    found = pareTree.search('test*');
+    found = pareTree.search('test');
 
-    expect(found.length).to.be(0);
+    expect(found.length).to.be(1);
 
     done();
   });
@@ -410,19 +173,19 @@ describe('unit', function () {
 
     var pareTree = new PareTree();
 
-    pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('tes*', {key:'testKey1', data:{test:'data'}});
 
-    pareTree.add('test', {key:'testKey2', data:{test:'data'}});
+    pareTree.add('te*', {key:'testKey2', data:{test:'data'}});
 
-    pareTree.add('test', {key:'testKey3', data:{test:'data'}});
+    pareTree.add('t*', {key:'testKey3', data:{test:'data'}});
 
-    var found = pareTree.search('tes*');
+    var found = pareTree.search('test');
 
     expect(found.length).to.be(3);
 
     expect(pareTree.remove({key:'testKey3'}).length).to.be(1);
 
-    found = pareTree.search('tes*');
+    found = pareTree.search('test');
 
     expect(found.length).to.be(2);
 
@@ -433,21 +196,21 @@ describe('unit', function () {
 
     var pareTree = new PareTree();
 
-    pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('te*', {key:'testKey1', data:{test:'data'}});
 
-    pareTree.add('test1', {key:'testKey2', data:{test:'data'}});
+    pareTree.add('test*', {key:'testKey2', data:{test:'data'}});
 
-    pareTree.add('test', {key:'testKey3', data:{test:'data'}});
+    pareTree.add('test*', {key:'testKey3', data:{test:'data'}});
 
     pareTree.add('test1', {key:'testKey3', data:{test:'data'}});
 
-    var found = pareTree.search('tes*');
+    var found = pareTree.search('test1');
 
     expect(found.length).to.be(4);
 
-    expect(pareTree.remove({key:'testKey3', path:'test1'}).length).to.be(1);
+    expect(pareTree.remove({key:'testKey3', path:'test*'}).length).to.be(1);
 
-    found = pareTree.search('tes*');
+    found = pareTree.search('test1');
 
     expect(found.length).to.be(3);
 
@@ -459,46 +222,23 @@ describe('unit', function () {
 
     var pareTree = new PareTree();
 
-    pareTree.add('test', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('test1', {key:'testKey1', data:{test:'data'}});
 
-    pareTree.add('test1', {key:'testKey2', data:{test:'data'}});
+    pareTree.add('test*', {key:'testKey2', data:{test:'data'}});
 
-    pareTree.add('test', {key:'testKey3', data:{test:'data'}});
+    pareTree.add('te*', {key:'testKey3', data:{test:'data'}});
 
-    pareTree.add('test1', {key:'testKey3', data:{test:'data'}});
+    pareTree.add('t*', {key:'testKey3', data:{test:'data'}});
 
-    var found = pareTree.search('te*', {filter:{key:'testKey3'}});
+    var found = pareTree.search('test1', {filter:{key:'testKey3'}});
 
     expect(found.length).to.be(2);
 
-    found = pareTree.search('te*');
+    found = pareTree.search('test1');
 
     expect(found.length).to.be(4);
 
     done();
-  });
-
-  it('tests filtering a search for subscriptions', function (done) {
-
-    var pareTree = new PareTree();
-
-    pareTree.add('short/*/test/complex', {
-      key: 'subkey1',
-      data: {
-        test: 4
-      }
-    });
-
-    pareTree.search('short/*/test/complex');
-
-    expect(pareTree.__wildcardMatch('short/*/test/complex', 'short/and/test/complex')).to.be(true);
-
-    var found = pareTree.search('short/and/test/complex');
-
-    expect(found.length).to.be(1);
-
-    done();
-
   });
 
 });

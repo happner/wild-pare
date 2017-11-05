@@ -19,7 +19,7 @@ describe('performance', function () {
     }
   };
 
-  var SUBSCRIPTION_COUNT = 10000;
+  var SUBSCRIPTION_COUNT = 1000;
 
   var DUPLICATE_KEYS = 3;
 
@@ -153,48 +153,6 @@ describe('performance', function () {
     testLog(perMillisecond + ' per millisecond');
 
     testLog(perMillisecond * 1000 + ' per second');
-
-    done();
-  });
-
-
-  var W_SUBSCRIPTION_COUNT = 50000;
-
-  it('tests the wildcard search matching, wildcard on both paths', function (done) {
-
-    this.timeout(300000);
-
-    var pareTree = new PareTree();
-
-    var subscriptions = random.randomPaths({
-      count: W_SUBSCRIPTION_COUNT
-    });
-
-    var wildcardPaths1 = subscriptions.map(function (subscription) {
-      return subscription.substring(0, random.integer(0, subscription.length - 1)) + '*';
-    });
-
-    var wildcardPaths2 = wildcardPaths1.map(function (subscription) {
-      return '*' + subscription.substring(random.integer(1, subscription.length - 1), subscription.length - 2);
-    });
-
-    var started = Date.now();
-
-    var errored = false;
-
-    subscriptions.forEach(function (subscription, subscriptionIndex) {
-      //console.log('matching:::', wildcardPaths1[subscriptionIndex], wildcardPaths2[subscriptionIndex]);
-      if (!pareTree.__wildcardMatch(wildcardPaths1[subscriptionIndex], wildcardPaths2[subscriptionIndex])) {
-        console.log('expected a true: ', wildcardPaths1[subscriptionIndex], wildcardPaths2[subscriptionIndex]);
-        errored = true;
-      }
-    });
-
-    var completed = Date.now() - started;
-
-    console.log('milliseconds:::', completed);
-
-    if (errored) return done(new Error('failed'));
 
     done();
   });
@@ -337,38 +295,6 @@ describe('performance', function () {
     done();
   });
 
-  it('tests the search matching, wildcard on one path', function (done) {
-
-    this.timeout(300000);
-
-    var pareTree = new PareTree();
-
-    var subscriptions = random.randomPaths({
-      count: W_SUBSCRIPTION_COUNT
-    });
-
-    var wildcards = subscriptions.map(function (subscription) {
-      return subscription.substring(0, random.integer(0, subscription.length - 1)) + '*';
-    });
-
-    var started = Date.now();
-
-    subscriptions.every(function (subscription, subscriptionIndex) {
-      //console.log('matching:::', wildcards[subscriptionIndex], subscription);
-      if (!pareTree.__wildcardMatch(wildcards[subscriptionIndex], subscription)) {
-        done(new Error('expected a true'));
-        return false;
-      }
-      return true;
-    });
-
-    var completed = Date.now() - started;
-
-    console.log('milliseconds:::', completed);
-
-    done();
-  });
-
   var N_SUBSCRIPTION_COUNT = 10000;
 
   var SEARCHES = 10;
@@ -442,7 +368,7 @@ describe('performance', function () {
 
   });
 
-  it('searches ' + N_SUBSCRIPTION_COUNT + ' subscriptions,' + SEARCHES + ' times, wildcard in search path', function (done) {
+  xit('searches ' + N_SUBSCRIPTION_COUNT + ' subscriptions,' + SEARCHES + ' times, wildcard in search path', function (done) {
 
     this.timeout(60000);
 
@@ -527,7 +453,7 @@ describe('performance', function () {
 
   });
 
-  it('searches ' + N_SUBSCRIPTION_COUNT + ' subscriptions,' + SEARCHES + ' times, wildcard in search path and in key', function (done) {
+  xit('searches ' + N_SUBSCRIPTION_COUNT + ' subscriptions,' + SEARCHES + ' times, wildcard in search path and in key', function (done) {
 
     this.timeout(60000);
 
@@ -610,5 +536,88 @@ describe('performance', function () {
 
     return done();
 
-  })
+  });
+
+  var patternCount = 10000;
+
+  function setCharAt(str,index,chr) {
+    if(index > str.length-1) return str;
+    return str.substr(0,index) + chr + str.substr(index+1);
+  }
+
+  xit('tests adding ' + patternCount + ' patterns and then searching through matches', function (done) {
+
+    var WildPare = require('../index.js');
+
+    var subscriptionTree = new WildPare();
+
+    var keyToMatch = random.string();
+
+    var startAdd = Date.now();
+
+    for (var i = 0; i < patternCount; i++){
+
+      var randomPattern = setCharAt(keyToMatch, random.integer(0, keyToMatch.length - 1), '*');
+
+      subscriptionTree.add(randomPattern, {key:'subscriber1', test:'data'});
+    }
+
+    var endAdd = Date.now();
+
+    var addDuration = endAdd - startAdd;
+
+    var startSearch = Date.now();
+
+    var values = subscriptionTree.search(keyToMatch);
+
+    expect(values.length).to.be(patternCount);
+
+    var endSearch = Date.now();
+
+    var searchDuration = endSearch - startSearch;
+
+    console.log('added ' + patternCount + ' listeners in ' + addDuration + 'ms');
+    console.log('searched through ' + patternCount + ' listeners in ' + searchDuration + 'ms');
+
+    done();
+  });
+
+  xit('tests adding ' + patternCount + ' patterns and then searching through matches', function (done) {
+
+    var WildPare = require('../index.js');
+
+    var subscriptionTree = new WildPare();
+
+    var keyToMatch = random.string().replace(/\//g,'');
+
+    var startAdd = Date.now();
+
+    for (var i = 0; i < patternCount; i++){
+
+      var randomPattern = setCharAt(keyToMatch, random.integer(1, keyToMatch.length - 1), '*');
+
+      console.log('added:::', randomPattern);
+
+      subscriptionTree.add(randomPattern, {key:'subscriber1', test:'data'});
+    }
+
+    var endAdd = Date.now();
+
+    var addDuration = endAdd - startAdd;
+
+    var startSearch = Date.now();
+
+    var values = subscriptionTree.search(keyToMatch);
+
+    expect(values.length).to.be(patternCount);
+
+    var endSearch = Date.now();
+
+    var searchDuration = endSearch - startSearch;
+
+    console.log('added ' + patternCount + ' listeners in ' + addDuration + 'ms');
+    console.log('searched through ' + patternCount + ' listeners in ' + searchDuration + 'ms');
+
+    done();
+  });
 });

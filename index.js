@@ -5,6 +5,7 @@ var BinarySearchTree = require('./lib/binary-search-tree');
 var uniqid = require('./lib/id').create();
 var sift = require('sift');
 var micromatch = require('micromatch');
+var wildstring = require('wildstring');
 var isGlob = require('is-glob');
 
 PareTree.prototype.add = add;
@@ -40,12 +41,23 @@ function PareTree(options) {
 
   this.options = options ? options : {};
 
+  if (!this.options.mode) this.options.mode = 'glob';
+
   if (!this.options.cache) this.options.cache = {
     max: 10000
   };
 
   if (!this.options.wildcardCache) this.options.wildcardCache = {
     cache: 1000
+  };
+
+  if (this.options.mode == 'wildstring') this.__wildcardMatch = function(str, pattern) {
+
+    //[start:{"key":"__wildcardMatch"}:start]
+
+    return wildstring.match(pattern, str);
+
+    //[end:{"key":"__wildcardMatch"}:end]
   };
 
   this.__cache = new LRU(this.options.cache);

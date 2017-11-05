@@ -4,9 +4,9 @@ describe('performance', function () {
 
   var expect = require('expect.js');
 
-  var random = require('../../fixtures/random');
+  var random = require('../__fixtures/random');
 
-  var SearchTree = require('../../../lib/binary-search-tree');
+  var SearchTree = require('../../lib/binary-search-tree');
 
   var VERBOSE = true;
 

@@ -4,7 +4,7 @@ describe('performance', function () {
 
   var expect = require('expect.js');
 
-  var random = require('./fixtures/random');
+  var random = require('./__fixtures/random');
 
   var PareTree = require('..');
 
@@ -92,6 +92,73 @@ describe('performance', function () {
     return done();
   });
 
+  it('adds and verifies random wildcard subscriptions, non-wildcard query path, wildstring mode', function (done) {
+
+    this.timeout(300000);
+
+    var subscriptions = random.randomPaths({
+      duplicate: DUPLICATE_KEYS,
+      count: SUBSCRIPTION_COUNT
+    });
+
+    var clients = random.string({
+      count: CLIENT_COUNT
+    });
+
+    var subscriptionTree = new PareTree({mode:'wildstring'});
+
+    var inserts = 0;
+
+    var searched = 0;
+
+    var startedInsert = Date.now();
+
+    subscriptions.forEach(function (subscriptionPath) {
+
+      clients.forEach(function (sessionId) {
+
+        subscriptionPath = subscriptionPath.substring(0, subscriptionPath.length - 1) + '*';
+
+        subscriptionTree.add(subscriptionPath, {
+          key: sessionId,
+          data: {
+            test: "data"
+          }
+        });
+        inserts++;
+        if (inserts % 1000 == 0) console.log(inserts + ' inserted.');
+      });
+    });
+
+    var endedInsert = Date.now();
+
+    var startedSearches = Date.now();
+
+    var results = 0;
+
+    subscriptions.forEach(function (subscriptionPath) {
+
+      searched++;
+      results += subscriptionTree.search(subscriptionPath, {decouple:true}).length;
+    });
+
+    expect(results / (DUPLICATE_KEYS * CLIENT_COUNT)).to.be(subscriptions.length);
+
+    var endedSearches = Date.now();
+
+    testLog('did ' + inserts + ' wildcard inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
+
+    testLog('did ' + searched + ' wildcard searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
+
+    var perMillisecond = searched / (endedSearches - startedSearches);
+
+    testLog(perMillisecond + ' per millisecond');
+
+    testLog(perMillisecond * 1000 + ' per second');
+
+    return done();
+  });
+
   it('adds and verifies random precise subscriptions, non-wildcard query path', function (done) {
 
     this.timeout(300000);
@@ -106,6 +173,71 @@ describe('performance', function () {
     });
 
     var subscriptionTree = new PareTree();
+
+    var inserts = 0;
+
+    var searched = 0;
+
+    var startedInsert = Date.now();
+
+    subscriptions.forEach(function (subscriptionPath) {
+
+      clients.forEach(function (sessionId) {
+
+        subscriptionTree.add(subscriptionPath, {
+          key: sessionId,
+          data: {
+            test: "data"
+          }
+        });
+        inserts++;
+        if (inserts % 1000 == 0) console.log(inserts + ' inserted.');
+      });
+    });
+
+    var endedInsert = Date.now();
+
+    var startedSearches = Date.now();
+
+    var results = 0;
+
+    subscriptions.forEach(function (subscriptionPath) {
+
+      searched++;
+      results += subscriptionTree.search(subscriptionPath, {decouple:true}).length;
+    });
+
+    expect(results / (DUPLICATE_KEYS * CLIENT_COUNT)).to.be(subscriptions.length);
+
+    var endedSearches = Date.now();
+
+    testLog('did ' + inserts + ' precise inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
+
+    testLog('did ' + searched + ' precise searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
+
+    var perMillisecond = searched / (endedSearches - startedSearches);
+
+    testLog(perMillisecond + ' per millisecond');
+
+    testLog(perMillisecond * 1000 + ' per second');
+
+    done();
+  });
+
+  it('adds and verifies random precise subscriptions, non-wildcard query path, wildstring mode', function (done) {
+
+    this.timeout(300000);
+
+    var subscriptions = random.randomPaths({
+      duplicate: DUPLICATE_KEYS,
+      count: SUBSCRIPTION_COUNT
+    });
+
+    var clients = random.string({
+      count: CLIENT_COUNT
+    });
+
+    var subscriptionTree = new PareTree({mode:'wildstring'});
 
     var inserts = 0;
 

@@ -1,9 +1,9 @@
 var should = require('chai').should()
   , assert = require('chai').assert
   , expect = require('expect.js')
-  , BinarySearchTree = require('../../../lib/binary-search-tree')
+  , BinarySearchTree = require('../../lib/binary-search-tree')
   , _ = require('underscore')
-  , customUtils = require('../../../lib/binary-search-tree/customUtils')
+  , customUtils = require('../../lib/binary-search-tree/customUtils')
   ;
 
 

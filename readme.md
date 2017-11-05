@@ -1,20 +1,17 @@
 <span style="font-size:128">&#191;</span> wild-pare
 ----------------
 
-#### *Subscription based in-memory key/value store, optimised for wildcard searches for nodejs*
+#### *Subscription based in-memory key/value store, optimised for wildcard or glob searches for nodejs*
 
 
-Arbitrary wildcard searches in key/value stores are computationally expensive because of the amount of possible permutations for the wildcard, ie: searching for "/the/*" could return "/the/quick/red/fox" or "/the/slow/brown/cow" or "/the/other" etc. etc.. This issue is compounded when a subscription model is introduced, where the subscriptions are stored wildcard keys. A tree-like structure is essential if we want to avoid full list scans.
+Arbitrary glob or wildcard searches in key/value stores are computationally expensive because of the amount of possible permutations for the wildcard, ie: searching for "/the/*" could return "/the/quick/red/fox" or "/the/slow/brown/cow" or "/the/other" etc. etc.. This issue is compounded when a subscription model is introduced, where the subscriptions are stored wildcard keys. A tree-like structure is essential if we want to avoid full list scans.
 
 What this library is good at:
-- For storing subscriptions with wildcards /test/subscription/*, and searching using non-wildcard queries: /test/subscription/1
-- For storing subscriptions with no wildcards /test/subscription/1, and searching using non-wildcard queries: /test/subscription/*
-
-NB: subscriptions that are wildcards, that get searched with wildcards, ie: /test/subscription/* /*/subscription/ are far slower, as full list scans are required fpr matching.
+- For storing subscriptions with wildcards or glob patterns /test/subscription/*, and searching using non-wildcard queries: /test/subscription/1
 
 wild-pare is in-memory subscription store that does arbitrary wildcard searches quickly, by implementing [louis's binary search tree](https://github.com/louischatriot/node-binary-search-tree) and branching the data by the key length, branches that are based on key lengths greater than the query segment (be it wildcard or precise), are pared away from the search.
 
-[Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key. Mcollina's [hyperid](https://github.com/mcollina/hyperid) was adapted to run on node versions 0.10 - 8 and included locally - as the unique id generation for creating subscriptions was the biggest performance hurdle. Also adapted [matcher](https://github.com/sindresorhus/matcher) to run on node 0.10. To all those people whose libraries I have adapted - thank you.
+[Isaac's LRU cache](https://github.com/isaacs/node-lru-cache) is also used to speed up consecutive lookups on the same key. Mcollina's [hyperid](https://github.com/mcollina/hyperid) was adapted to run on node versions 0.10 - 8 and included locally - as the unique id generation for creating subscriptions was the biggest performance hurdle. To all those people whose libraries I have adapted - thank you.
 
 #### abstract tree structure:
 
@@ -28,9 +25,6 @@ wild-pare is in-memory subscription store that does arbitrary wildcard searches 
 - *bst = binary search tree
 - *segment_length, the length of the actual key/wildcard part
 
-
-#### still in development, so there be dragons...
-
 #### quickstart
 
 ```bash
@@ -41,24 +35,25 @@ npm i wild-pare --save
 
 ```javascript
 
+//glob subscriptions:
+
 var PareTree = require('wild-pare');
 
-var subscriptionTree = new PareTree();
+var subscriptionTree = new PareTree(); //for glob matches, for simple wildcard matches new PareTree({mode:'wildstring'})
+//in wildstring mode /te/* wil match /te/st/1, glob mode the / means something
 
-//ADD PRECISE SUBSCRIPTIONS:
-
-subscriptionRef1 = subscriptionTree.add('/a/subscription/path', {
-  key: 'subscriber1',
-  data: {some: {custom: "data"}, value: 12}
+var subscriptionRef1 = subscriptionTree.add('/a/*/**', {
+  key: 'subscriber1',//your subscriber key must be unique to top level subscriber
+  data: {some: {custom: "data"}, value: 12}//this is data you wish to store or filter by
 });
 
   //returns:
 
   // {
-  //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
+  //   "id": [generated unique id]
   // }
 
-  var queryResults1 = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/precise/subscription'})
+  var queryResults1 = subscriptionTree.search('/a/subscription/path/1');
 
   //returns a single subscription:
 
@@ -71,27 +66,21 @@ subscriptionRef1 = subscriptionTree.add('/a/subscription/path', {
   //       },
   //       "value": 12
   //     },
-  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
+  //     "id": [generated unique id]
   //   }
   // ]
 
 
   //add another subscription to the same path but with different data:
 
-  var subscriptionRef2 = subscriptionTree.add('/a/subscription/path', {
-    key: 'subscriber1',
+  var subscriptionRef2 = subscriptionTree.add('/a/*/**', {
+    key: 'subscriber2',
     data: {some: {custom: "data"}, value: 6}
   });
 
-  //returns:
-
-  // {
-  //   "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-  // }
-
   //query the tree:
 
-  var queryResults2 = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/subscription/path'})
+  var queryResults2 = subscriptionTree.search('/a/subscription/path');
 
   //returns our subscriptions:
 
@@ -104,17 +93,17 @@ subscriptionRef1 = subscriptionTree.add('/a/subscription/path', {
   //       },
   //       "value": 12
   //     },
-  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
+  //     "id": [generated unique id]
   //   },
   //   {
-  //     "key": "subscriber1",
+  //     "key": "subscriber2",
   //     "data": {
   //       "some": {
   //         "custom": "data"
   //       },
   //       "value": 6
   //     },
-  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
+  //     "id": [generated unique id]
   //   }
   // ]
 
@@ -124,150 +113,28 @@ subscriptionRef1 = subscriptionTree.add('/a/subscription/path', {
 
   var removalResult = subscriptionTree.remove(subscriptionRef1); // or subscriptionTree.remove({id:subscriptionReference.id}) or subscriptionTree.remove(subscriptionReference.recipient.path)
 
-  //returns a reference to our first subscription:
+  //returns an array of the deleted subscriptions:
 
-  // [
-  //   {
-  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/0&/a/subscription/path"
-  //   }
-  // ]
+//   {
+//     "key": "subscriber1",
+//     "data": {
+//       "some": {
+//         "custom": "data"
+//       },
+//       "value": 12
+//     },
+//     "id": [generated unique id]
+//   }
 
-  //we do a search again, our first subscription is no longer there
-
-  var queryResultsRemove = subscriptionTree.search('/a/subscription/path');//or subscriptionTree.search({path:'/a/subscription/path'})
-
-  //returns:
-
-  // [
-  //   {
-  //     "key": "subscriber1",
-  //     "data": {
-  //       "some": {
-  //         "custom": "data"
-  //       },
-  //       "value": 6
-  //     },
-  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-  //   }
-  // ]
 
   //you can also remove all subscriptions matching a path, regardless of what subscriber:
-  // ie: subscriptionTree.remove('/a/subscription/*');
+  subscriptionTree.remove({path:'/a/*/**'});
 
-  //ADD WILDCARD SUBSCRIPTIONS:
+  //and you can also remove all matching subscriptions for a specific subscriber only
+  subscriptionTree.remove({path:'/a/*/**', key:'subscriber2'});
 
-  //add a wildcard subscription, wildcards are the * character - wildcards allow for any amount of text, so the following are valid wildcard paths:
-  // /a/wildcard/subscription/* or */wildcard/subscription* or */wildcard* or */wildcard*/subscription/*
-  // and would all return for a search that looks like this: /a/subscription/path
+  //NB - unexpected behaviour alert: only wildcard paths exactly matching the above path will be removed, so although the path appears to contain wildcards it is matched precisely against existing subscription paths, so only subscriptions with /a/*/** are removed, a subscription like this /a/1/2 will remain
 
-  //right wildcard:
-
-  var wildcardRightRef = subscriptionTree.add('/a/subscription/*', {
-    key: 'subscriber2',
-    data: {some: {custom: "data"}, value: 5}
-  });
-
-  //left wildcard:
-
-  var wildcardLeftRef = subscriptionTree.add('*/subscription/path', {
-    key: 'subscriber3',
-    data: {some: {custom: "data"}, value: 15}
-  });
-
-  //we now query our list, and should get 3 subscriptions returned,
-  //as the wildcards match up and the subscriptionRef2 subscription also matches our search path:
-
-  var queryResultsWildcard = subscriptionTree.search({path: '/a/subscription/path'});
-
-  //returns:
-
-  // [
-  //   {
-  //     "key": "subscriber1",
-  //     "data": {
-  //       "some": {
-  //         "custom": "data"
-  //       },
-  //       "value": 6
-  //     },
-  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-  //   },
-  //   {
-  //     "key": "subscriber2",
-  //     "data": {
-  //       "some": {
-  //         "custom": "data"
-  //       },
-  //       "value": 5
-  //     },
-  //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
-  //   },
-  //   {
-  //     "key": "subscriber3",
-  //     "data": {
-  //       "some": {
-  //         "custom": "data"
-  //       },
-  //       "value": 15
-  //     },
-  //     "id": "subscriber3&1&D7R8LYFvSRCTAP5s88Uonw/3&/subscription/path"
-  //   }
-  // ]
-
-    //MONGO STYLE FILTERS:
-
-    queryResultsWildcard = subscriptionTree.search({
-      path: '/a/subscription/path',
-      filter: { // defaults to postFilter
-        key: 'subscriber2'
-      },
-      // preFilter: {}, // acts on entire dataset before matching
-      // postFilter: {} // acts only on selected set after matching
-    }); //only subscriber2's subscriptions
-
-  //returns:
-
-  // [
-  //   {
-  //     "key": "subscriber2",
-  //     "data": {
-  //       "some": {
-  //         "custom": "data"
-  //       },
-  //       "value": 5
-  //     },
-  //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
-  //   }
-  // ]
-
-  //filtering by the subscription data, using an $lte operator:
-
-  queryResultsWildcard = subscriptionTree.search({path: '/a/subscription/path', filter: {"data.value":{$lte:10}}});//only subscriptions with a data.value less than 10
-
-  //returns:
-
-  // [
-  //   {
-  //     "key": "subscriber1",
-  //     "data": {
-  //       "some": {
-  //         "custom": "data"
-  //       },
-  //       "value": 6
-  //     },
-  //     "id": "subscriber1&0&D7R8LYFvSRCTAP5s88Uonw/1&/a/subscription/path"
-  //   },
-  //   {
-  //     "key": "subscriber2",
-  //     "data": {
-  //       "some": {
-  //         "custom": "data"
-  //       },
-  //       "value": 5
-  //     },
-  //     "id": "subscriber2&2&D7R8LYFvSRCTAP5s88Uonw/2&/a/subscription/"
-  //   }
-  // ]
 
 ```
 
@@ -281,21 +148,6 @@ run the tests locally:
 git clone https://github.com/happner/wild-pare.git && cd wild-pare && npm install
 
 mocha test
-```
-
-#### performance:
-
-Between 60000 and 90000 wildcard searches in a tree with 300000 subscription nodes in one second. On an i7 macbook pro, with 8GB memory:
-
-```bash
-//when running mocha test/perf, output
-
-did 300000 wildcard inserts in 3888 milliseconds
-did 30000 wildcard searches in 374 milliseconds, in a tree with += 300000 nodes.
-
-did 300000 precise inserts in 3663 milliseconds
-did 30000 precise searches in 250 milliseconds, in a tree with += 300000 nodes.
-```
 
 #### supported node versions:
 
@@ -303,6 +155,4 @@ v0.10 - v8
 
 #### caveats
 
-- subscriptions that enclose the path with wildcards, ie \*/a/test/subscription/\* will perform slower, because they are stored and searched through in a different manner and will always involve regex comparisons.
-- searches with wildcards in the query will perform slowly as well, as these will entail a many-to-many search.
-- although it is fast, the library is synchronous (blocking) - be aware of this in high-volume environments, I am thinking of an async version that stores data on file, making this a database of sorts.
+- the library is synchronous (blocking) - be aware of this in high-volume environments, I am thinking of an async version that stores data on file, making this a database of sorts.

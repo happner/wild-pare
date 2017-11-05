@@ -189,7 +189,7 @@ function __addAllRecipient(recipient){
 
   this.__wildcardAllRecipients.push(reference);
 
-  return reference;
+  return {id:reference.id};
 }
 
 function __pruneBranch(reference){
@@ -452,7 +452,7 @@ function __addSubscription(path, segment, recipient) {
 
   //[end:{"key":"__addSubscription"}:end]
 
-  return reference;
+  return {id:reference.id};
 }
 
 function __appendRecipients(segment, recipients, exact){

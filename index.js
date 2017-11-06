@@ -442,11 +442,24 @@ function __removeBySubscriberKey(key){
     }
   });
 
-  if (!removed.length) return [];
+  if (removeIndexes.length > 0) self.__pruneAllRecipients(removeIndexes);
 
-  self.__pruneAllRecipients(removeIndexes);
+  removeIndexes = [];
 
-  self.__resetCache();
+  self.__wildcardAllRecipients.forEach(function(reference, referenceIndex){
+
+    if (reference.key == key){
+
+      removeIndexes.push(referenceIndex);
+      removed.push(reference);
+    }
+  });
+
+  if (removeIndexes.length > 0){
+    self.__pruneAllWildcardRecipients(removeIndexes);
+  }
+
+  if (removed.length > 0) self.__resetCache();
 
   return removed;
 }

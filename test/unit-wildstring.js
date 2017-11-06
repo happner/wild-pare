@@ -10,17 +10,12 @@ describe('unit', function () {
 
   var PareTree = require('..');
 
-  var VERBOSE = true;
-
-  var testLog = function (message, object) {
-    if (VERBOSE) {
-      console.log(message);
-      if (object) console.log(JSON.stringify(object, null, 2));
-    }
-  };
+  function getTree(){
+    return new PareTree.create({mode:'wildstring'});
+  }
 
   it('tests adding a subscription', function (done) {
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('test/*', {key:'testKey1', data:{test:'data'}});
 
@@ -29,7 +24,7 @@ describe('unit', function () {
 
   it('tests fails attempting a glob search', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('test', {key:'testKey1', data:{test:'data'}});
 
@@ -38,14 +33,14 @@ describe('unit', function () {
     try{
       pareTree.search('test*');
     }catch(e){
-      expect(e.toString()).to.be('Error: glob searches are not allowed unless options.exact is true (globs are ignored both sides)');
+      expect(e.toString()).to.be('Error: glob or wildcard searches are not allowed unless options.exact is true (globs/wildcards are ignored both sides and literal key compare happens)');
       done();
     }
   });
 
   it('tests adding and finding a PR subscription', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('test*', {key:'testKey1', data:{test:'data'}});
 
@@ -58,7 +53,7 @@ describe('unit', function () {
 
   it('tests adding and finding a PP subscription', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('test', {key:'testKey1', data:{test:'data'}});
 
@@ -71,22 +66,23 @@ describe('unit', function () {
 
   it('tests adding and finding subscriptions', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('test/*', {key:'testKey1', data:{test:'data'}});
     pareTree.add('test/', {key:'testKey1', data:{test:'data'}});
     pareTree.add('tes*/**', {key:'testKey1', data:{test:'data'}});
     pareTree.add('test/', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('*', {key:'testKey1', data:{test:'data'}});
 
-    expect(pareTree.search('test/1').length).to.be(2);
-    expect(pareTree.search('tester/').length).to.be(1);
+    expect(pareTree.search('test/1').length).to.be(3);
+    expect(pareTree.search('tester/').length).to.be(2);
 
     done();
   });
 
   it('tests wildcard matching', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     expect(pareTree.__wildcardMatch('/test/1', '/te*/*')).to.be(true);
     expect(pareTree.__wildcardMatch('/test/match', '/test/mat*')).to.be(true);
@@ -107,7 +103,7 @@ describe('unit', function () {
 
   it('tests removing subscriptions by id', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('test', {key:'testKey1', data:{test:'data'}});
 
@@ -129,7 +125,7 @@ describe('unit', function () {
 
   it('tests removing subscriptions by none-wild-card path', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('test1', {key:'testKey1', data:{test:'data'}});
 
@@ -150,7 +146,7 @@ describe('unit', function () {
 
   it('tests removing subscriptions by wild-card path', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('test', {key:'testKey1', data:{test:'data'}});
 
@@ -171,7 +167,7 @@ describe('unit', function () {
 
   it('tests removing subscriptions by subscriber', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('tes*', {key:'testKey1', data:{test:'data'}});
 
@@ -194,7 +190,7 @@ describe('unit', function () {
 
   it('tests removing subscriptions by path and subscriber', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('te*', {key:'testKey1', data:{test:'data'}});
 
@@ -220,7 +216,7 @@ describe('unit', function () {
 
   it('tests filtering a search for subscriptions', function (done) {
 
-    var pareTree = new PareTree({mode:'wildstring'});
+    var pareTree = getTree();
 
     pareTree.add('test1', {key:'testKey1', data:{test:'data'}});
 
@@ -237,6 +233,31 @@ describe('unit', function () {
     found = pareTree.search('test1');
 
     expect(found.length).to.be(4);
+
+    done();
+  });
+
+  it('tests adding and finding and removing subscriptions', function (done) {
+
+    var pareTree = getTree();
+
+    pareTree.add('test/*', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('test/', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('tes*/**', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('test/', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('*', {key:'testKey1', data:{test:'data'}});
+
+    expect(pareTree.search('test/1').length).to.be(3);
+    expect(pareTree.search('tester/').length).to.be(2);
+
+    pareTree.remove({key:'testKey1', path:'*'});
+
+    expect(pareTree.search('test/1').length).to.be(2);
+    expect(pareTree.search('tester/').length).to.be(1);
+
+    pareTree.remove({path:'test/*'});
+
+    expect(pareTree.search('test/1').length).to.be(1);
 
     done();
   });

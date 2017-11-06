@@ -7,10 +7,14 @@ var sift = require('sift');
 var micromatch = require('micromatch');
 var wildstring = require('wildstring');
 var isGlob = require('is-glob');
+var Promise = require('bluebird');
 
 PareTree.prototype.add = add;
 PareTree.prototype.search = search;
 PareTree.prototype.remove = remove;
+PareTree.prototype.addAsync = addAsync;
+PareTree.prototype.searchAsync = searchAsync;
+PareTree.prototype.removeAsync = removeAsync;
 
 PareTree.prototype.__initialize = __initialize;
 PareTree.prototype.__segmentPath = __segmentPath;
@@ -30,6 +34,7 @@ PareTree.prototype.__addAllRecipient = __addAllRecipient;
 PareTree.prototype.__clone = __clone;
 PareTree.prototype.__addSubscription = __addSubscription;
 PareTree.prototype.__checkPath = __checkPath;
+PareTree.prototype.__pathWildcard = __pathWildcard;
 
 PareTree.prototype.__appendRecipients = __appendRecipients;
 PareTree.prototype.__appendRecipientsPR = __appendRecipientsPR;
@@ -51,18 +56,44 @@ function PareTree(options) {
     cache: 1000
   };
 
-  if (this.options.mode == 'wildstring') this.__wildcardMatch = function(str, pattern) {
+  if (this.options.mode == 'wildstring'){
+    this.__wildcardMatch = function(str, pattern) {
 
-    //[start:{"key":"__wildcardMatch"}:start]
+      //[start:{"key":"__wildcardMatch"}:start]
 
-    return wildstring.match(pattern, str);
+      return wildstring.match(pattern, str);
 
-    //[end:{"key":"__wildcardMatch"}:end]
-  };
+      //[end:{"key":"__wildcardMatch"}:end]
+    };
+
+    this.__pathWildcard = function(str){
+      return str.indexOf('*') > -1;
+    }
+  }
 
   this.__cache = new LRU(this.options.cache);
 
   this.__initialize();
+}
+
+PareTree.create = function(options){
+
+  return new PareTree(options);
+};
+
+function __initialize() {
+
+  this.__cache.reset();
+
+  this.__trunk = Object.create({});
+
+  this.__trunk[this.BRANCH.WILDCARD] = BinarySearchTree.create();
+
+  this.__trunk[this.BRANCH.PRECISE] = BinarySearchTree.create();
+
+  this.__allRecipients = [];
+
+  this.__wildcardAllRecipients = [];
 }
 
 
@@ -72,42 +103,37 @@ PareTree.prototype.BRANCH = {
   WILDCARD: 1
 };
 
-function __checkPath(path){
-
-  if (path == null) throw new Error('path cannot be null');
-
-  var stripped = '';
-
-  var lastChar = null;
-
-  for (var i = 0; i < path.length; i++) {
-
-    if (path[i] == '*' && lastChar == '*') continue;
-
-    stripped += path[i];
-
-    lastChar = path[i];
-  }
-
-  //no */test/paths
-  if (stripped[0] == '*' && stripped.length > 1) throw new Error('path can only have right hand sided wildcards, only /test/**, not **/test');
-}
-
-function add(path, recipient) {
+function add(path, subscription) {
 
   this.__checkPath(path);
 
-  if (recipient == null) throw new Error('no recipient for subscription');
+  if (subscription == null) throw new Error('no recipient for subscription');
 
-  if (recipient.substring) recipient = {
-    key: recipient
+  if (subscription.substring) subscription = {
+    key: subscription
   };
 
   var segment = this.__segmentPath(path);
 
-  if (segment.branch === this.BRANCH.ALL) return this.__addAllRecipient(recipient);
+  if (segment.branch === this.BRANCH.ALL) return this.__addAllRecipient(subscription);
 
-  return this.__addSubscription(path, segment, recipient);
+  return this.__addSubscription(path, segment, subscription);
+}
+
+function addAsync(path, subscription){
+
+  var self = this;
+
+  return new Promise(function(resolve, reject){
+    setImmediate(function(){
+      try{
+        var reference = self.add(path, subscription);
+        resolve(reference);
+      }catch(e){
+        reject(e);
+      }
+    })
+  });
 }
 
 function search(path, options) {
@@ -115,7 +141,7 @@ function search(path, options) {
 
   if (!options) options = {};
 
-  if (!options.exact && isGlob(path)) throw new Error('glob searches are not allowed unless options.exact is true (globs are ignored both sides)');
+  if (!options.exact && this.__pathWildcard(path)) throw new Error('glob or wildcard searches are not allowed unless options.exact is true (globs/wildcards are ignored both sides and literal key compare happens)');
 
   if (options == null) options = {};
 
@@ -160,6 +186,23 @@ function search(path, options) {
   return recipients;
 }
 
+function searchAsync(path, options){
+
+  var self = this;
+
+  return new Promise(function(resolve, reject){
+    setImmediate(function(){
+      try{
+        var results = self.search(path, options);
+        resolve(results);
+      }catch(e){
+        reject(e);
+      }
+    })
+  });
+}
+
+
 function remove(options) {
 
   if (options == null) throw new Error('invalid remove options: options cannot be null');
@@ -181,6 +224,50 @@ function remove(options) {
   if (options.key) return this.__removeBySubscriberKey(options.key);
 
   throw new Error("invalid remove options: options must have a subscription 'id', subscriber 'key' or 'path' property");
+}
+
+function removeAsync(options){
+
+  var self = this;
+
+  return new Promise(function(resolve, reject){
+    setImmediate(function(){
+      try{
+        var results = self.remove(options);
+        resolve(results);
+      }catch(e){
+        reject(e);
+      }
+    })
+  });
+}
+
+function __pathWildcard(path){
+
+  return isGlob(path);
+}
+
+function __checkPath(path){
+
+  if (path == null || path == '') throw new Error('path cannot be null or blank, for subscribe to any use *');
+
+  var stripped = '';
+
+  var lastChar = null;
+
+  for (var i = 0; i < path.length; i++) {
+
+    if (path[i] == '*' && lastChar == '*') continue;
+
+    stripped += path[i];
+
+    lastChar = path[i];
+  }
+
+  //no */test/paths
+  if (stripped[0] == '*' && stripped.length > 1) throw new Error('path can only have right hand sided wildcards, only /test/**, not **/test');
+
+  return stripped;
 }
 
 function __addAllRecipient(recipient){
@@ -367,7 +454,9 @@ function __removeByPathAndSubscriberKey(path, key){
 
   var removed = [];
 
-  var options = {filter:{key:key}, excludeAll:true, exact:path};
+  var options = {filter:{key:key}, exact:path};
+
+  if (path != '*') options.excludeAll = true;
 
   self.search(path, options).forEach(function(reference){
 
@@ -377,21 +466,6 @@ function __removeByPathAndSubscriberKey(path, key){
   self.__cache.reset();
 
   return removed;
-}
-
-function __initialize() {
-
-  this.__cache.reset();
-
-  this.__trunk = Object.create({});
-
-  this.__trunk[this.BRANCH.WILDCARD] = BinarySearchTree.create();
-
-  this.__trunk[this.BRANCH.PRECISE] = BinarySearchTree.create();
-
-  this.__allRecipients = [];
-
-  this.__wildcardAllRecipients = [];
 }
 
 function __addSubscription(path, segment, recipient) {
@@ -515,7 +589,6 @@ function __appendReferences(branchSegment, recipients, matchTo, exact){
     subscription.value.recipients.allValues(false, true).forEach(function(recipient){
 
       recipient.value.references.allValues(false, true).forEach(function(reference){
-        //console.log('matchTo:::', matchTo, reference);
         if (exact && reference.value.path != exact) return;
         if (matchTo && !self.__wildcardMatch(matchTo, reference.value.path)) return;
         recipients.push(reference.value);

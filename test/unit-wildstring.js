@@ -1,4 +1,4 @@
-describe('unit', function () {
+describe('unit-wildstring-mode', function () {
 
   this.timeout(5000);
 
@@ -91,7 +91,7 @@ describe('unit', function () {
     expect(pareTree.__wildcardMatch('/test/complex/and/short', '/test/*/*/short')).to.be(true);
     expect(pareTree.__wildcardMatch('/test/complex/and/short', '/test/**')).to.be(true);
     expect(pareTree.__wildcardMatch('/test/complex/and/short','/test/**/short')).to.be(true);
-    expect(pareTree.__wildcardMatch('/test/complex/and/long','/test/complex/*/short', )).to.be(false);
+    expect(pareTree.__wildcardMatch('/test/complex/and/long','/test/complex/*/short')).to.be(false);
     expect(pareTree.__wildcardMatch('/blah/complex/and/short', '/test/complex/*')).to.be(false);
     expect(pareTree.__wildcardMatch('/test/complex/and/long', '/test/*/*/short')).to.be(false);
     expect(pareTree.__wildcardMatch('/tes/complex/and/short', '/test*')).to.be(false);

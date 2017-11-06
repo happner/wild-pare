@@ -31,6 +31,11 @@ PareTree.prototype.__pruneAllRecipients = __pruneAllRecipients;
 PareTree.prototype.__pruneAllWildcardRecipients = __pruneAllWildcardRecipients;
 PareTree.prototype.__addAllRecipient = __addAllRecipient;
 
+PareTree.prototype.__initializeCache = __initializeCache;
+PareTree.prototype.__checkCache = __checkCache;
+PareTree.prototype.__insertCache = __insertCache;
+PareTree.prototype.__resetCache = __resetCache;
+
 PareTree.prototype.__clone = __clone;
 PareTree.prototype.__addSubscription = __addSubscription;
 PareTree.prototype.__checkPath = __checkPath;
@@ -71,7 +76,7 @@ function PareTree(options) {
     }
   }
 
-  this.__cache = new LRU(this.options.cache);
+  this.__initializeCache(this.options.cache);
 
   this.__initialize();
 }
@@ -83,7 +88,7 @@ PareTree.create = function(options){
 
 function __initialize() {
 
-  this.__cache.reset();
+  // this.__cache.reset();
 
   this.__trunk = Object.create({});
 
@@ -161,7 +166,7 @@ function search(path, options) {
 
   var cacheKey = path + JSON.stringify(options);
 
-  var recipients = this.__cache.get(cacheKey);
+  var recipients = this.__checkCache(cacheKey);
 
   if (recipients != null) return recipients;
 
@@ -177,7 +182,7 @@ function search(path, options) {
 
   if (options.postFilter) recipients = sift(options.postFilter, recipients);
 
-  this.__cache.set(cacheKey, recipients);
+  if (recipients.length > 0) this.__insertCache(cacheKey, recipients);
 
   if (options.decouple) recipients = this.__decouple(recipients);
 
@@ -201,7 +206,6 @@ function searchAsync(path, options){
     })
   });
 }
-
 
 function remove(options) {
 
@@ -240,6 +244,25 @@ function removeAsync(options){
       }
     })
   });
+}
+
+function __initializeCache(options){
+  this.__cache = new LRU(options);
+}
+
+function __checkCache(key){
+  return this.__cache.get(key);
+  // return this.__cache[key];
+}
+
+function __insertCache(key, data){
+  this.__cache.set(key, data);
+  //this.__cache[key] = data;
+}
+
+function __resetCache(){
+  //this.__cache = {};
+  this.__cache.reset();
 }
 
 function __pathWildcard(path){
@@ -374,7 +397,7 @@ function __removeById(id){
   if (removed) {
 
     self.__pruneAllRecipients([removeIndex]);
-    self.__cache.reset();
+    self.__resetCache();
 
     return removed;
   }
@@ -394,7 +417,7 @@ function __removeById(id){
 
   if (removed){
     self.__pruneAllWildcardRecipients([removeIndex]);
-    self.__cache.reset();
+    self.__resetCache();
   }
 
   return removed;
@@ -423,7 +446,7 @@ function __removeBySubscriberKey(key){
 
   self.__pruneAllRecipients(removeIndexes);
 
-  self.__cache.reset();
+  self.__resetCache();
 
   return removed;
 }
@@ -443,7 +466,7 @@ function __removeByPath(path){
     removed.push(self.__removeById(reference.id));
   });
 
-  self.__cache.reset();
+  self.__resetCache();
 
   return removed;
 }
@@ -463,7 +486,7 @@ function __removeByPathAndSubscriberKey(path, key){
     removed.push(self.__removeById(reference.id));
   });
 
-  self.__cache.reset();
+  self.__resetCache();
 
   return removed;
 }

@@ -244,4 +244,24 @@ describe('unit', function () {
     done();
   });
 
+  it('tests adding and finding and removing subscriptions on 2 trees', function (done) {
+
+    var pareTree1 = getTree();
+    var pareTree2 = getTree();
+
+    pareTree1.add('test/*', {key:'testKey1', data:{test:'data'}});
+    pareTree2.add('test/*', {key:'testKey1', data:{test:'data'}});
+
+    expect(pareTree1.search('test/1').length).to.be(1);
+    expect(pareTree2.search('test/1').length).to.be(1);
+
+    pareTree1.remove({key:'testKey1', path:'test/*'});
+
+    expect(pareTree1.search('test/1').length).to.be(0);
+    expect(pareTree2.search('test/1').length).to.be(1);
+
+    done();
+
+  });
+
 });

@@ -120,6 +120,8 @@ function add(path, subscription) {
 
   var segment = this.__segmentPath(path);
 
+  this.__resetCache();
+
   if (segment.branch === this.BRANCH.ALL) return this.__addAllRecipient(subscription);
 
   return this.__addSubscription(path, segment, subscription);
@@ -625,6 +627,7 @@ function __appendReferences(branchSegment, recipients, matchTo, exact){
     subscription.value.recipients.allValues(false, true).forEach(function(recipient){
 
       recipient.value.references.allValues(false, true).forEach(function(reference){
+
         if (exact && reference.value.path != exact) return;
         if (matchTo && !self.__wildcardMatch(matchTo, reference.value.path)) return;
         recipients.push(reference.value);

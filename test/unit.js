@@ -60,6 +60,7 @@ describe('unit', function () {
 
     var pareTree = getTree();
 
+    expect(pareTree.__wildcardMatch('/something/like/that', '/*/*/that')).to.be(true);
     expect(pareTree.__wildcardMatch('/test/1', '/te*/*')).to.be(true);
     expect(pareTree.__wildcardMatch('/test/match', '/test/mat*')).to.be(true);
     expect(pareTree.__wildcardMatch('/test/complex/and/short','/test/complex/*/short')).to.be(true);

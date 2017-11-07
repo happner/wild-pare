@@ -25,7 +25,7 @@ describe('performance', function () {
 
   var CLIENT_COUNT = 10;
 
-  it('adds and verifies random wildcard subscriptions, non-wildcard query path', function (done) {
+  it('adds and verifies random wildcard subscriptions, glob mode', function (done) {
 
     this.timeout(300000);
 
@@ -81,7 +81,7 @@ describe('performance', function () {
 
     testLog('did ' + inserts + ' wildcard inserts in ' + (endedInsert - startedInsert) + ' milliseconds');
 
-    testLog('did ' + searched + ' wildcard searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
+    testLog('did ' + searched + ' glob searches in ' + (endedSearches - startedSearches) + ' milliseconds, in a tree with += ' + inserts + ' nodes.');
 
     var perMillisecond = searched / (endedSearches - startedSearches);
 
@@ -92,7 +92,7 @@ describe('performance', function () {
     return done();
   });
 
-  it('adds and verifies random wildcard subscriptions, non-wildcard query path, wildstring mode', function (done) {
+  it('adds and verifies random wildcard subscriptions, wildstring mode', function (done) {
 
     this.timeout(300000);
 

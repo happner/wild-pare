@@ -10,11 +10,16 @@ var isGlob = require('is-glob');
 var Promise = require('bluebird');
 
 PareTree.prototype.add = add;
+PareTree.prototype.upsert = upsert;
 PareTree.prototype.search = search;
 PareTree.prototype.remove = remove;
 PareTree.prototype.addAsync = addAsync;
+PareTree.prototype.upsertAsync = upsertAsync;
 PareTree.prototype.searchAsync = searchAsync;
 PareTree.prototype.removeAsync = removeAsync;
+
+PareTree.prototype.__preProcessUpsert = __preProcessUpsert;
+PareTree.prototype.__completeUpsert = __completeUpsert;
 
 PareTree.prototype.__initialize = __initialize;
 PareTree.prototype.__segmentPath = __segmentPath;
@@ -61,8 +66,8 @@ function PareTree(options) {
     cache: 1000
   };
 
-  if (this.options.mode == 'wildstring'){
-    this.__wildcardMatch = function(str, pattern) {
+  if (this.options.mode == 'wildstring') {
+    this.__wildcardMatch = function (str, pattern) {
 
       //[start:{"key":"__wildcardMatch"}:start]
 
@@ -71,7 +76,7 @@ function PareTree(options) {
       //[end:{"key":"__wildcardMatch"}:end]
     };
 
-    this.__pathWildcard = function(str){
+    this.__pathWildcard = function (str) {
       return str.indexOf('*') > -1;
     }
   }
@@ -81,7 +86,7 @@ function PareTree(options) {
   this.__initialize();
 }
 
-PareTree.create = function(options){
+PareTree.create = function (options) {
 
   return new PareTree(options);
 };
@@ -110,33 +115,44 @@ PareTree.prototype.BRANCH = {
 
 function add(path, subscription) {
 
-  this.__checkPath(path);
+  var prepared = this.__preProcessUpsert(path, subscription);
 
-  if (subscription == null) throw new Error('no recipient for subscription');
-
-  if (subscription.substring) subscription = {
-    key: subscription
-  };
-
-  var segment = this.__segmentPath(path);
-
-  this.__resetCache();
-
-  if (segment.branch === this.BRANCH.ALL) return this.__addAllRecipient(subscription);
-
-  return this.__addSubscription(path, segment, subscription);
+  return this.__completeUpsert(path, prepared);
 }
 
-function addAsync(path, subscription){
+function upsert(path, subscription) {
+
+  var prepared = this.__preProcessUpsert(path, subscription, true);
+
+  return this.__completeUpsert(path, prepared);
+}
+
+function addAsync(path, subscription) {
 
   var self = this;
 
-  return new Promise(function(resolve, reject){
-    setImmediate(function(){
-      try{
+  return new Promise(function (resolve, reject) {
+    setImmediate(function () {
+      try {
         var reference = self.add(path, subscription);
         resolve(reference);
-      }catch(e){
+      } catch (e) {
+        reject(e);
+      }
+    })
+  });
+}
+
+function upsertAsync(path, subscription) {
+
+  var self = this;
+
+  return new Promise(function (resolve, reject) {
+    setImmediate(function () {
+      try {
+        var reference = self.upsert(path, subscription);
+        resolve(reference);
+      } catch (e) {
         reject(e);
       }
     })
@@ -178,7 +194,7 @@ function search(path, options) {
 
   this.__appendRecipients(segment, recipients, options.exact);
 
-  if (!options.excludeAll) this.__wildcardAllRecipients.forEach(function(allRecipient){
+  if (!options.excludeAll) this.__wildcardAllRecipients.forEach(function (allRecipient) {
     recipients.push(allRecipient);
   });
 
@@ -193,16 +209,16 @@ function search(path, options) {
   return recipients;
 }
 
-function searchAsync(path, options){
+function searchAsync(path, options) {
 
   var self = this;
 
-  return new Promise(function(resolve, reject){
-    setImmediate(function(){
-      try{
+  return new Promise(function (resolve, reject) {
+    setImmediate(function () {
+      try {
         var results = self.search(path, options);
         resolve(results);
-      }catch(e){
+      } catch (e) {
         reject(e);
       }
     })
@@ -217,7 +233,7 @@ function remove(options) {
     path: options
   };
 
-  if (options.id){
+  if (options.id) {
     var removed = this.__removeById(options.id);
     if (removed == null) return [];
     return [removed];
@@ -232,47 +248,77 @@ function remove(options) {
   throw new Error("invalid remove options: options must have a subscription 'id', subscriber 'key' or 'path' property");
 }
 
-function removeAsync(options){
+function removeAsync(options) {
 
   var self = this;
 
-  return new Promise(function(resolve, reject){
-    setImmediate(function(){
-      try{
+  return new Promise(function (resolve, reject) {
+    setImmediate(function () {
+      try {
         var results = self.remove(options);
         resolve(results);
-      }catch(e){
+      } catch (e) {
         reject(e);
       }
     })
   });
 }
 
-function __initializeCache(options){
+function __preProcessUpsert(path, subscription, upsert) {
+
+  this.__checkPath(path);
+
+  if (subscription == null) throw new Error('no recipient for subscription');
+
+  if (subscription.substring) subscription = {
+    key: subscription
+  };
+
+  if (!upsert || !subscription.id) subscription.id = uniqid();
+
+  var segment = this.__segmentPath(path);
+
+  return {segment: segment, subscription: subscription};
+}
+
+function __completeUpsert(path, prepared) {
+
+  var result;
+
+  if (prepared.segment.branch === this.BRANCH.ALL) result = this.__addAllRecipient(prepared.subscription);
+
+  else result = this.__addSubscription(path, prepared.segment, prepared.subscription);
+
+  this.__resetCache();
+
+  return result;
+}
+
+function __initializeCache(options) {
   this.__cache = new LRU(options);
 }
 
-function __checkCache(key){
+function __checkCache(key) {
   return this.__cache.get(key);
   // return this.__cache[key];
 }
 
-function __insertCache(key, data){
+function __insertCache(key, data) {
   this.__cache.set(key, data);
   //this.__cache[key] = data;
 }
 
-function __resetCache(){
+function __resetCache() {
   //this.__cache = {};
   this.__cache.reset();
 }
 
-function __pathWildcard(path){
+function __pathWildcard(path) {
 
   return isGlob(path);
 }
 
-function __checkPath(path){
+function __checkPath(path) {
 
   if (path == null || path == '') throw new Error('path cannot be null or blank, for subscribe to any use *');
 
@@ -295,16 +341,18 @@ function __checkPath(path){
   return stripped;
 }
 
-function __addAllRecipient(recipient){
+function __addAllRecipient(recipient) {
 
-  var reference = {id: uniqid(), data:recipient.data, key:recipient.key, path:'*'};
+  var reference = this.__clone(recipient);
+
+  reference.path = '*';
 
   this.__wildcardAllRecipients.push(reference);
 
-  return {id:reference.id};
+  return {id: reference.id};
 }
 
-function __pruneBranch(reference){
+function __pruneBranch(reference) {
 
   var self = this;
 
@@ -324,66 +372,62 @@ function __pruneBranch(reference){
 
   if (!existingRecipient) return;
 
-  var existingReference = existingRecipient.references.search(reference.id)[0];
+  delete existingRecipient.references[reference.id];
 
-  if (existingReference) {
+  if (Object.keys(existingRecipient.references).length == 0){
 
-    existingRecipient.references.delete(reference.id);
+    subscription.recipients.delete(reference.key);
 
-    if (existingRecipient.references.allValues(false, true).length == 0){
+    if (subscription.recipients.allValues(false, true).length == 0) {
 
-      subscription.recipients.delete(reference.key);
+      branchSegment.subscriptions.delete(reference.path);
 
-      if (subscription.recipients.allValues(false, true).length == 0){
+      if (branchSegment.subscriptions.allValues(false, true).length == 0) {
 
-        branchSegment.subscriptions.delete(reference.path);
+        branch.segments.delete(reference.segment);
 
-        if (branchSegment.subscriptions.allValues(false, true).length == 0){
+        if (branch.segments.allValues(false, true).length == 0) {
 
-          branch.segments.delete(reference.segment);
-
-          if (branch.segments.allValues(false, true).length == 0){
-
-            self.__trunk[reference.branch].delete(reference.segment.length);
-          }
+          self.__trunk[reference.branch].delete(reference.segment.length);
         }
       }
     }
   }
+
 }
 
-function __pruneAllRecipients(removeIndexes){
+function __pruneAllRecipients(removeIndexes) {
 
   var self = this;
 
   removeIndexes.reverse();
 
-  removeIndexes.forEach(function(removeAt){
+  removeIndexes.forEach(function (removeAt) {
     self.__allRecipients.splice(removeAt, 1);
   });
 }
 
-function __pruneAllWildcardRecipients(removeIndexes){
+function __pruneAllWildcardRecipients(removeIndexes) {
 
   var self = this;
 
   removeIndexes.reverse();
 
-  removeIndexes.forEach(function(removeAt){
+  removeIndexes.forEach(function (removeAt) {
     self.__wildcardAllRecipients.splice(removeAt, 1);
   });
 }
 
-function __removeById(id){
+function __removeById(id) {
 
   var self = this;
 
   var removeIndex = -1;
   var removed = null;
 
-  self.__allRecipients.every(function(reference, referenceIndex){
+  self.__allRecipients.every(function (reference, referenceIndex) {
 
-    if (reference.id == id){
+    if (reference.id == id) {
 
       removeIndex = referenceIndex;
 
@@ -404,9 +448,9 @@ function __removeById(id){
     return removed;
   }
 
-  self.__wildcardAllRecipients.every(function(reference, referenceIndex){
+  self.__wildcardAllRecipients.every(function (reference, referenceIndex) {
 
-    if (reference.id == id){
+    if (reference.id == id) {
 
       removeIndex = referenceIndex;
 
@@ -417,7 +461,7 @@ function __removeById(id){
     return true;
   });
 
-  if (removed){
+  if (removed) {
     self.__pruneAllWildcardRecipients([removeIndex]);
     self.__resetCache();
   }
@@ -425,16 +469,16 @@ function __removeById(id){
   return removed;
 }
 
-function __removeBySubscriberKey(key){
+function __removeBySubscriberKey(key) {
 
   var self = this;
 
   var removeIndexes = [];
   var removed = [];
 
-  self.__allRecipients.forEach(function(reference, referenceIndex){
+  self.__allRecipients.forEach(function (reference, referenceIndex) {
 
-    if (reference.key == key){
+    if (reference.key == key) {
 
       removeIndexes.push(referenceIndex);
 
@@ -448,16 +492,16 @@ function __removeBySubscriberKey(key){
 
   removeIndexes = [];
 
-  self.__wildcardAllRecipients.forEach(function(reference, referenceIndex){
+  self.__wildcardAllRecipients.forEach(function (reference, referenceIndex) {
 
-    if (reference.key == key){
+    if (reference.key == key) {
 
       removeIndexes.push(referenceIndex);
       removed.push(reference);
     }
   });
 
-  if (removeIndexes.length > 0){
+  if (removeIndexes.length > 0) {
     self.__pruneAllWildcardRecipients(removeIndexes);
   }
 
@@ -466,17 +510,17 @@ function __removeBySubscriberKey(key){
   return removed;
 }
 
-function __removeByPath(path){
+function __removeByPath(path) {
 
   var self = this;
 
   var removed = [];
 
-  var options = {exact:path};
+  var options = {exact: path};
 
   if (path != '*') options.excludeAll = true;
 
-  self.search(path, options).forEach(function(reference){
+  self.search(path, options).forEach(function (reference) {
 
     removed.push(self.__removeById(reference.id));
   });
@@ -486,17 +530,17 @@ function __removeByPath(path){
   return removed;
 }
 
-function __removeByPathAndSubscriberKey(path, key){
+function __removeByPathAndSubscriberKey(path, key) {
 
   var self = this;
 
   var removed = [];
 
-  var options = {filter:{key:key}, exact:path};
+  var options = {filter: {key: key}, exact: path};
 
   if (path != '*') options.excludeAll = true;
 
-  self.search(path, options).forEach(function(reference){
+  self.search(path, options).forEach(function (reference) {
 
     removed.push(self.__removeById(reference.id));
   });
@@ -527,7 +571,7 @@ function __addSubscription(path, segment, recipient) {
   if (branchSegment == null) {
 
     branchSegment = {
-      key:segment.key,
+      key: segment.key,
       subscriptions: new BinarySearchTree()
     };
 
@@ -551,23 +595,30 @@ function __addSubscription(path, segment, recipient) {
   if (existingRecipient == null) {
 
     existingRecipient = this.__clone(recipient);
-    existingRecipient.references = new BinarySearchTree();
+    existingRecipient.references = {};
 
     subscription.recipients.insert(recipient.key, existingRecipient);
   }
 
-  var reference = {id: uniqid(), data:recipient.data, key:recipient.key, path:path, segment:segment.key, branch:segment.branch};
+  var reference = {
+    id: recipient.id,
+    data: this.__clone(recipient.data),
+    key: recipient.key,
+    path: path,
+    segment: segment.key,
+    branch: segment.branch
+  };
 
-  existingRecipient.references.insert(reference.id, reference);
+  existingRecipient.references[reference.id] = reference;
 
   this.__allRecipients.push(reference);
 
   //[end:{"key":"__addSubscription"}:end]
 
-  return {id:reference.id};
+  return {id: reference.id};
 }
 
-function __appendRecipients(segment, recipients, exact){
+function __appendRecipients(segment, recipients, exact) {
 
   //[start:{"key":"__appendRecipients"}:start]
 
@@ -578,15 +629,15 @@ function __appendRecipients(segment, recipients, exact){
   //[end:{"key":"__appendRecipients"}:end]
 }
 
-function __appendRecipientsPR(segment, recipients, exact){
+function __appendRecipientsPR(segment, recipients, exact) {
 
   var self = this;
 
   //[start:{"key":"__appendRecipientsPR"}:start]
 
-  this.__trunk[this.BRANCH.WILDCARD].betweenBounds({ $lte: segment.path.length }).forEach(function(branch){
+  this.__trunk[this.BRANCH.WILDCARD].betweenBounds({$lte: segment.path.length}).forEach(function (branch) {
 
-    branch.segments.allValues(false, true).forEach(function(branchSegment){
+    branch.segments.allValues(false, true).forEach(function (branchSegment) {
 
       if (segment.path.indexOf(branchSegment.value.key) != 0) return;
 
@@ -597,15 +648,15 @@ function __appendRecipientsPR(segment, recipients, exact){
   //[end:{"key":"__appendRecipientsPR"}:end]
 }
 
-function __appendRecipientsPP(segment, recipients){
+function __appendRecipientsPP(segment, recipients) {
 
   var self = this;
 
   //[start:{"key":"__appendRecipientsPP"}:start]
 
-  this.__trunk[this.BRANCH.PRECISE].betweenBounds({ $eq: segment.path.length }).forEach(function(branch){
+  this.__trunk[this.BRANCH.PRECISE].betweenBounds({$eq: segment.path.length}).forEach(function (branch) {
 
-    branch.segments.allValues(false, true).forEach(function(branchSegment){
+    branch.segments.allValues(false, true).forEach(function (branchSegment) {
 
       if (branchSegment.value.key != segment.path) return;
 
@@ -616,21 +667,23 @@ function __appendRecipientsPP(segment, recipients){
   //[end:{"key":"__appendRecipientsPP"}:end]
 }
 
-function __appendReferences(branchSegment, recipients, matchTo, exact){
+function __appendReferences(branchSegment, recipients, matchTo, exact) {
 
   //[start:{"key":"__appendReferences"}:start]
 
   var self = this;
 
-  branchSegment.subscriptions.allValues(false, true).forEach(function(subscription){
+  branchSegment.subscriptions.allValues(false, true).forEach(function (subscription) {
 
-    subscription.value.recipients.allValues(false, true).forEach(function(recipient){
+    subscription.value.recipients.allValues(false, true).forEach(function (recipient) {
 
-      recipient.value.references.allValues(false, true).forEach(function(reference){
+      Object.keys(recipient.value.references).forEach(function (referenceId) {
 
-        if (exact && reference.value.path != exact) return;
-        if (matchTo && !self.__wildcardMatch(matchTo, reference.value.path)) return;
-        recipients.push(reference.value);
+        var reference = recipient.value.references[referenceId];
+
+        if (exact && reference.path != exact) return;
+        if (matchTo && !self.__wildcardMatch(matchTo, reference.path)) return;
+        recipients.push(reference);
       });
     });
   });
@@ -648,7 +701,7 @@ function __segmentPath(path) {
     pathRightEnd: path.substring(path.length - 1, path.length),
     pathLeftEnd: path.substring(0, 1),
     wildcardIndex: path.indexOf('*'),
-    path:path //used by the search
+    path: path //used by the search
   };
 
   if (path.replace(/[*]/g, '') == '') segment.branch = this.BRANCH.ALL;
@@ -677,7 +730,7 @@ function __decouple(results) {
   return this.__clone(results);
 }
 
-function __clone(obj){
+function __clone(obj) {
 
   return JSON.parse(JSON.stringify(obj));
 }

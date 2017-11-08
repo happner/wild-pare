@@ -107,6 +107,53 @@ var queryResults2 = subscriptionTree.search('/a/subscription/path');
 
 ```
 
+#### wildcard searches are not supported
+
+```
+//dont expect wildcard searches to work, the wildcard in the search term is dealt with literally
+
+var subscriptionRef2 = subscriptionTree.add('/a/1', {
+  key: 'subscriber2',
+  data: {some: {custom: "data"}, value: 6}
+});
+
+//query the tree:
+
+var queryResults2 = subscriptionTree.search('/a/*');
+
+//returns no subscriptions:
+
+// [
+// ]
+
+//however...
+
+var subscriptionRef2 = subscriptionTree.add('/a/*', {
+  key: 'subscriber2',
+  data: {some: {custom: "data"}, value: 6}
+});
+
+//query the tree:
+
+var queryResults2 = subscriptionTree.search('/a/*');
+
+//returns our subscription because the terms wildcard subscription is matched to the literal search term:
+
+// [
+//   {
+//     "key": "subscriber2",
+//     "data": {
+//       "some": {
+//         "custom": "data"
+//       },
+//       "value": 6
+//     },
+//     "id": [generated unique id]
+//   }
+// ]
+
+```
+
 #### filtering searches
 
 ```javascript

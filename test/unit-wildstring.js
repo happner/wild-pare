@@ -22,22 +22,6 @@ describe('unit-wildstring-mode', function () {
     done();
   });
 
-  it('tests fails attempting a glob search', function (done) {
-
-    var pareTree = getTree();
-
-    pareTree.add('test', {key:'testKey1', data:{test:'data'}});
-
-    pareTree.add('precise', {key:'testKey1', data:{test:'data'}});
-
-    try{
-      pareTree.search('test*');
-    }catch(e){
-      expect(e.toString()).to.be('Error: glob or wildcard searches are not allowed unless options.exact is true (globs/wildcards are ignored both sides and literal key compare happens)');
-      done();
-    }
-  });
-
   it('tests adding and finding a PR subscription', function (done) {
 
     var pareTree = getTree();
@@ -60,6 +44,19 @@ describe('unit-wildstring-mode', function () {
     pareTree.add('precise', {key:'testKey1', data:{test:'data'}});
 
     expect(pareTree.search('test').length).to.be(1);
+
+    done();
+  });
+
+  it('tests adding and finding an all subscription', function (done) {
+
+    var pareTree = getTree();
+
+    pareTree.add('*', {key: 'testKey1', data: {test: 'data'}});
+
+    pareTree.add('precise', {key: 'testKey1', data: {test: 'data'}});
+
+    expect(pareTree.search('precise').length).to.be(2);
 
     done();
   });

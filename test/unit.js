@@ -40,6 +40,19 @@ describe('unit', function () {
     done();
   });
 
+  it('tests adding and finding an all subscription', function (done) {
+
+    var pareTree = getTree();
+
+    pareTree.add('*', {key: 'testKey1', data: {test: 'data'}});
+
+    pareTree.add('precise', {key: 'testKey1', data: {test: 'data'}});
+
+    expect(pareTree.search('precise').length).to.be(2);
+
+    done();
+  });
+
   it('tests adding and finding subscriptions', function (done) {
 
     var pareTree = getTree();

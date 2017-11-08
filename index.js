@@ -97,9 +97,9 @@ function __initialize() {
 
   this.__trunk = Object.create({});
 
-  this.__trunk[this.BRANCH.WILDCARD] = BinarySearchTree.create();
+  this.__trunk[this.BRANCH.WILDCARD] = {};
 
-  this.__trunk[this.BRANCH.PRECISE] = BinarySearchTree.create();
+  this.__trunk[this.BRANCH.PRECISE] = {};
 
   this.__allRecipients = [];
 
@@ -163,8 +163,6 @@ function search(path, options) {
   //[start:{"key":"search"}:start]
 
   if (!options) options = {};
-
-  if (!options.exact && this.__pathWildcard(path)) throw new Error('glob or wildcard searches are not allowed unless options.exact is true (globs/wildcards are ignored both sides and literal key compare happens)');
 
   if (options == null) options = {};
 
@@ -356,7 +354,7 @@ function __pruneBranch(reference) {
 
   var self = this;
 
-  var branch = self.__trunk[reference.branch].search(reference.segment.length)[0];
+  var branch = self.__trunk[reference.branch][reference.segment.length];
 
   if (!branch) return;
 
@@ -374,7 +372,7 @@ function __pruneBranch(reference) {
 
   delete existingRecipient.references[reference.id];
 
-  if (Object.keys(existingRecipient.references).length == 0){
+  if (Object.keys(existingRecipient.references).length == 0) {
 
     subscription.recipients.delete(reference.key);
 
@@ -388,7 +386,7 @@ function __pruneBranch(reference) {
 
         if (branch.segments.allValues(false, true).length == 0) {
 
-          self.__trunk[reference.branch].delete(reference.segment.length);
+          delete self.__trunk[reference.branch][reference.segment.length];
         }
       }
     }
@@ -554,7 +552,7 @@ function __addSubscription(path, segment, recipient) {
 
   //[start:{"key":"__addSubscription"}:start]
 
-  var branch = this.__trunk[segment.branch].search(segment.key.length)[0];
+  var branch = this.__trunk[segment.branch][segment.key.length];
 
   if (branch == null) {
 
@@ -563,7 +561,7 @@ function __addSubscription(path, segment, recipient) {
       segments: new BinarySearchTree()
     };
 
-    this.__trunk[segment.branch].insert(segment.key.length, branch);
+    this.__trunk[segment.branch][segment.key.length] = branch;
   }
 
   var branchSegment = branch.segments.search(segment.key)[0];
@@ -635,16 +633,18 @@ function __appendRecipientsPR(segment, recipients, exact) {
 
   //[start:{"key":"__appendRecipientsPR"}:start]
 
-  this.__trunk[this.BRANCH.WILDCARD].betweenBounds({$lte: segment.path.length}).forEach(function (branch) {
+  for (var i = 0; i <= segment.path.length; i++) {
 
-    branch.segments.allValues(false, true).forEach(function (branchSegment) {
+    var branch = self.__trunk[this.BRANCH.WILDCARD][i];
 
-      if (segment.path.indexOf(branchSegment.value.key) != 0) return;
+    if (branch)
+      branch.segments.allValues(false, true).forEach(function (branchSegment) {
 
-      self.__appendReferences(branchSegment.value, recipients, segment.path, exact);
-    });
-  });
+        if (segment.path.indexOf(branchSegment.value.key) != 0) return;
 
+        self.__appendReferences(branchSegment.value, recipients, segment.path, exact);
+      });
+  }
   //[end:{"key":"__appendRecipientsPR"}:end]
 }
 
@@ -654,15 +654,15 @@ function __appendRecipientsPP(segment, recipients) {
 
   //[start:{"key":"__appendRecipientsPP"}:start]
 
-  this.__trunk[this.BRANCH.PRECISE].betweenBounds({$eq: segment.path.length}).forEach(function (branch) {
+  var branch = self.__trunk[this.BRANCH.PRECISE][segment.path.length];
 
+  if (branch)
     branch.segments.allValues(false, true).forEach(function (branchSegment) {
 
       if (branchSegment.value.key != segment.path) return;
 
       self.__appendReferences(branchSegment.value, recipients);
     });
-  });
 
   //[end:{"key":"__appendRecipientsPP"}:end]
 }

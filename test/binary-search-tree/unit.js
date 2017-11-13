@@ -1038,20 +1038,4 @@ describe('Binary search tree', function () {
     });
 
   });   // ==== End of 'Randomized test' ==== //
-
-  it('it tests the all functionality', function () {
-
-    var bst = new BinarySearchTree();
-
-    bst.insert(1, {test:1});
-    bst.insert(2, {test:2});
-    bst.insert(3, {test:3});
-
-    expect(bst.allValues().length).to.be(3);
-
-    bst.delete(1);
-
-    expect(bst.allValues().length).to.be(2);
-
-  });
 });

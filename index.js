@@ -362,11 +362,11 @@ function __pruneBranch(reference) {
 
   if (!branchSegment) return;
 
-  var subscription = branchSegment.subscriptions.search(reference.path)[0];
+  var subscription = branchSegment.subscriptions[reference.path];
 
   if (!subscription) return;
 
-  var existingRecipient = subscription.recipients.search(reference.key)[0];
+  var existingRecipient = subscription.recipients[reference.key];
 
   if (!existingRecipient) return;
 
@@ -374,17 +374,17 @@ function __pruneBranch(reference) {
 
   if (Object.keys(existingRecipient.references).length == 0) {
 
-    subscription.recipients.delete(reference.key);
+    delete subscription.recipients[reference.key];
 
-    if (subscription.recipients.allValues(false, true).length == 0) {
+    if (Object.keys(subscription.recipients).length == 0) {
 
-      branchSegment.subscriptions.delete(reference.path);
+      delete branchSegment.subscriptions[reference.path];
 
-      if (branchSegment.subscriptions.allValues(false, true).length == 0) {
+      if (Object.keys(branchSegment.subscriptions).length == 0) {
 
         branch.segments.delete(reference.segment);
 
-        if (branch.segments.allValues(false, true).length == 0) {
+        if (branch.segments.getNumberOfKeys() == 0) {
 
           delete self.__trunk[reference.branch][reference.segment.length];
         }
@@ -570,32 +570,32 @@ function __addSubscription(path, segment, recipient) {
 
     branchSegment = {
       key: segment.key,
-      subscriptions: new BinarySearchTree()
+      subscriptions: {}
     };
 
     branch.segments.insert(segment.key, branchSegment);
   }
 
-  var subscription = branchSegment.subscriptions.search(path)[0];
+  var subscription = branchSegment.subscriptions[path];
 
   if (!subscription) {
 
     subscription = {
       path: path,
-      recipients: new BinarySearchTree()
+      recipients: {}
     };
 
-    branchSegment.subscriptions.insert(path, subscription)
+    branchSegment.subscriptions[path] = subscription;
   }
 
-  var existingRecipient = subscription.recipients.search(recipient.key)[0];
+  var existingRecipient = subscription.recipients[recipient.key];
 
   if (existingRecipient == null) {
 
     existingRecipient = this.__clone(recipient);
     existingRecipient.references = {};
 
-    subscription.recipients.insert(recipient.key, existingRecipient);
+    subscription.recipients[recipient.key] = existingRecipient;
   }
 
   var reference = {
@@ -636,14 +636,13 @@ function __appendRecipientsPR(segment, recipients, exact) {
   for (var i = 0; i <= segment.path.length; i++) {
 
     var branch = self.__trunk[this.BRANCH.WILDCARD][i];
+    var segmentPath = segment.path.substring(0, i);
 
-    if (branch)
-      branch.segments.allValues(false, true).forEach(function (branchSegment) {
-
-        if (segment.path.indexOf(branchSegment.value.key) != 0) return;
-
-        self.__appendReferences(branchSegment.value, recipients, segment.path, exact);
+    if (branch) {
+      branch.segments.search(segmentPath).forEach(function(branchSegment){
+        self.__appendReferences(branchSegment, recipients, segment.path, exact);
       });
+    }
   }
   //[end:{"key":"__appendRecipientsPR"}:end]
 }
@@ -656,13 +655,11 @@ function __appendRecipientsPP(segment, recipients) {
 
   var branch = self.__trunk[this.BRANCH.PRECISE][segment.path.length];
 
-  if (branch)
-    branch.segments.allValues(false, true).forEach(function (branchSegment) {
-
-      if (branchSegment.value.key != segment.path) return;
-
-      self.__appendReferences(branchSegment.value, recipients);
+  if (branch){
+    branch.segments.search(segment.path).forEach(function (branchSegment) {
+      self.__appendReferences(branchSegment, recipients);
     });
+  }
 
   //[end:{"key":"__appendRecipientsPP"}:end]
 }
@@ -673,13 +670,17 @@ function __appendReferences(branchSegment, recipients, matchTo, exact) {
 
   var self = this;
 
-  branchSegment.subscriptions.allValues(false, true).forEach(function (subscription) {
+  Object.keys(branchSegment.subscriptions).forEach(function (subscriptionKey) {
 
-    subscription.value.recipients.allValues(false, true).forEach(function (recipient) {
+    var subscription = branchSegment.subscriptions[subscriptionKey];
 
-      Object.keys(recipient.value.references).forEach(function (referenceId) {
+    Object.keys(subscription.recipients).forEach(function (recipientKey) {
 
-        var reference = recipient.value.references[referenceId];
+      var recipient =subscription.recipients[recipientKey];
+
+      Object.keys(recipient.references).forEach(function (referenceId) {
+
+        var reference = recipient.references[referenceId];
 
         if (exact && reference.path != exact) return;
         if (matchTo && !self.__wildcardMatch(matchTo, reference.path)) return;

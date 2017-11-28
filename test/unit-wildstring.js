@@ -61,6 +61,19 @@ describe('unit-wildstring-mode', function () {
     done();
   });
 
+  it('tests adding and finding all subscriptions', function (done) {
+
+    var pareTree = getTree();
+
+    pareTree.add('*', {key: 'testKey1', data: {test: 'data'}});
+
+    pareTree.add('precise', {key: 'testKey1', data: {test: 'data'}});
+
+    expect(pareTree.search('*').length).to.be(2);
+
+    done();
+  });
+
   it('tests adding and finding subscriptions', function (done) {
 
     var pareTree = getTree();
@@ -247,14 +260,13 @@ describe('unit-wildstring-mode', function () {
     expect(pareTree.search('test/1').length).to.be(3);
     expect(pareTree.search('tester/').length).to.be(2);
 
-    pareTree.remove({key:'testKey1', path:'*'});
-
-    expect(pareTree.search('test/1').length).to.be(2);
-    expect(pareTree.search('tester/').length).to.be(1);
-
     pareTree.remove({path:'test/*'});
 
-    expect(pareTree.search('test/1').length).to.be(1);
+    expect(pareTree.search('test/1').length).to.be(2);
+
+    pareTree.remove({key:'testKey1', path:'*'});
+
+    expect(pareTree.search('*').length).to.be(0);
 
     done();
   });

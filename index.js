@@ -47,6 +47,7 @@ PareTree.prototype.__checkPath = __checkPath;
 PareTree.prototype.__pathWildcard = __pathWildcard;
 
 PareTree.prototype.__appendRecipients = __appendRecipients;
+PareTree.prototype.__appendAllRecipients = __appendAllRecipients;
 PareTree.prototype.__appendRecipientsPR = __appendRecipientsPR;
 PareTree.prototype.__appendRecipientsPP = __appendRecipientsPP;
 
@@ -190,7 +191,9 @@ function search(path, options) {
 
   var segment = this.__segmentPath(path);
 
-  this.__appendRecipients(segment, recipients, options.exact);
+  if (segment.branch == this.BRANCH.ALL) this.__appendAllRecipients(recipients);
+
+  else this.__appendRecipients(segment, recipients, options.exact);
 
   if (!options.excludeAll) this.__wildcardAllRecipients.forEach(function (allRecipient) {
     recipients.push(allRecipient);
@@ -614,6 +617,18 @@ function __addSubscription(path, segment, recipient) {
   //[end:{"key":"__addSubscription"}:end]
 
   return {id: reference.id};
+}
+
+function __appendAllRecipients(recipients) {
+
+  //[start:{"key":"__appendAllRecipients"}:start]
+
+  this.__allRecipients.forEach(function(recipient){
+
+    recipients.push(recipient);
+  });
+
+  //[end:{"key":"__appendAllRecipients"}:end]
 }
 
 function __appendRecipients(segment, recipients, exact) {

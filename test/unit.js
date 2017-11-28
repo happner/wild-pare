@@ -53,6 +53,19 @@ describe('unit', function () {
     done();
   });
 
+  it('tests adding and finding all subscriptions', function (done) {
+
+    var pareTree = getTree();
+
+    pareTree.add('*', {key: 'testKey1', data: {test: 'data'}});
+
+    pareTree.add('precise', {key: 'testKey1', data: {test: 'data'}});
+
+    expect(pareTree.search('*').length).to.be(2);
+
+    done();
+  });
+
   it('tests adding and finding subscriptions', function (done) {
 
     var pareTree = getTree();
@@ -237,23 +250,22 @@ describe('unit', function () {
 
     var pareTree = getTree();
 
-    pareTree.add('test/*', {key: 'testKey1', data: {test: 'data'}});
-    pareTree.add('test/', {key: 'testKey1', data: {test: 'data'}});
-    pareTree.add('tes*/**', {key: 'testKey1', data: {test: 'data'}});
-    pareTree.add('test/', {key: 'testKey1', data: {test: 'data'}});
-    pareTree.add('*', {key: 'testKey1', data: {test: 'data'}});
+    pareTree.add('test/*', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('test/', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('tes*/**', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('test/', {key:'testKey1', data:{test:'data'}});
+    pareTree.add('*', {key:'testKey1', data:{test:'data'}});
 
     expect(pareTree.search('test/1').length).to.be(3);
     expect(pareTree.search('tester/').length).to.be(2);
 
-    pareTree.remove({key: 'testKey1', path: '*'});
+    pareTree.remove({path:'test/*'});
 
     expect(pareTree.search('test/1').length).to.be(2);
-    expect(pareTree.search('tester/').length).to.be(1);
 
-    pareTree.remove({path: 'test/*'});
+    pareTree.remove({key:'testKey1', path:'*'});
 
-    expect(pareTree.search('test/1').length).to.be(1);
+    expect(pareTree.search('*').length).to.be(0);
 
     done();
   });
